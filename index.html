@@ -1,0 +1,2201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Afrody.ta Tarot - Lecturas precisas y guiadas</title>
+    <link rel="stylesheet" href="https://use.typekit.net/csj0vlf.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary-color: #ff8ec7;
+            --secondary-color: #e8b9d0;
+            --dark-bg: #0a0a0a;
+            --medium-bg: #2d0f1f;
+            --light-bg: rgba(90, 42, 63, 0.3);
+            --border-color: #5a2a3f;
+        }
+        
+        body {
+            background-color: var(--dark-bg);
+            color: #f8e9f0;
+            line-height: 1.6;
+            font-family: "futura-pt", sans-serif;
+            font-weight: 300;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* Header y navegación */
+        header {
+            background: linear-gradient(to bottom, var(--medium-bg) 0%, var(--dark-bg) 100%);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .header-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .logo {
+            font-family: "carilliantine", serif;
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            font-weight: 400;
+            text-align: center;
+            color: var(--primary-color);
+            letter-spacing: 2px;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 10px rgba(255, 142, 199, 0.4);
+        }
+        
+        .tagline {
+            font-family: "new-astro", sans-serif;
+            text-align: center;
+            font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+            color: var(--secondary-color);
+            margin-bottom: 1rem;
+            letter-spacing: 1px;
+            line-height: 1.3;
+        }
+        
+        .tabs {
+            display: flex;
+            justify-content: center;
+            list-style: none;
+            flex-wrap: wrap;
+            gap: 5px;
+            width: 100%;
+        }
+        
+        .tab-button {
+            background: transparent;
+            color: var(--secondary-color);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 0.8rem;
+            font-family: "new-astro", sans-serif;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border-radius: 20px;
+            transition: all 0.3s;
+            letter-spacing: 0.5px;
+            flex: 1;
+            min-width: 0;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .tab-button:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+        
+        .tab-button.active {
+            background: var(--border-color);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+        
+        /* Contenido de las pestañas */
+        .tab-content {
+            display: none;
+            padding: 2rem 0;
+            animation: fadeIn 0.8s;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Hero Section */
+        .hero {
+            background: radial-gradient(ellipse at center, var(--medium-bg) 0%, var(--dark-bg) 70%);
+            padding: 3rem 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" opacity="0.03"><defs><pattern id="stars" patternUnits="userSpaceOnUse" width="100" height="100"><circle cx="20" cy="30" r="0.5" fill="white"/><circle cx="50" cy="10" r="0.3" fill="white"/><circle cx="80" cy="40" r="0.7" fill="white"/><circle cx="10" cy="70" r="0.4" fill="white"/><circle cx="40" cy="90" r="0.5" fill="white"/><circle cx="70" cy="60" r="0.3" fill="white"/><circle cx="90" cy="80" r="0.6" fill="white"/></pattern></defs><rect width="100" height="100" fill="url(%23stars)"/></svg>');
+            z-index: 0;
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .hero h1 {
+            font-family: "carilliantine", serif;
+            font-size: clamp(1.8rem, 5vw, 3rem);
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            letter-spacing: 1.5px;
+            text-shadow: 0 0 15px rgba(255, 142, 199, 0.5);
+            line-height: 1.2;
+        }
+        
+        .hero p {
+            font-family: "new-astro", sans-serif;
+            font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+            max-width: 700px;
+            margin: 0 auto 1.5rem;
+            color: var(--secondary-color);
+            line-height: 1.6;
+        }
+        
+        .cta-section {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: var(--light-bg);
+            border-radius: 10px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            border: 1px solid var(--border-color);
+        }
+        
+        .cta-section p {
+            font-family: "new-astro", sans-serif;
+            font-size: clamp(0.85rem, 2vw, 1rem);
+            margin-bottom: 1rem;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(to right, var(--border-color), #3a1a2f);
+            color: var(--primary-color);
+            padding: 0.7rem 1.5rem;
+            border: 1px solid var(--primary-color);
+            border-radius: 25px;
+            text-decoration: none;
+            font-family: "new-astro", sans-serif;
+            font-size: clamp(0.85rem, 2vw, 1rem);
+            transition: all 0.3s;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn:hover {
+            background: var(--primary-color);
+            color: var(--medium-bg);
+            box-shadow: 0 0 15px rgba(255, 142, 199, 0.6);
+        }
+        
+        /* Secciones */
+        .section-title {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-family: "carilliantine", serif;
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            color: var(--primary-color);
+            letter-spacing: 1.5px;
+            line-height: 1.2;
+        }
+        
+        .section-subtitle {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-family: "new-astro", sans-serif;
+            font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+            color: var(--secondary-color);
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.4;
+        }
+        
+        .about-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .about-card {
+            background: var(--light-bg);
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            transition: transform 0.3s;
+        }
+        
+        .about-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary-color);
+        }
+        
+        .about-card h3 {
+            font-family: "carilliantine", serif;
+            font-size: clamp(1.3rem, 3vw, 1.6rem);
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+        
+        .about-card p {
+            font-family: "futura-pt", sans-serif;
+            color: var(--secondary-color);
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        
+        .readings-list {
+            list-style: none;
+        }
+        
+        .readings-list li {
+            margin-bottom: 0.7rem;
+            position: relative;
+            padding-left: 1.2rem;
+            font-family: "futura-pt", sans-serif;
+            color: var(--secondary-color);
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+        
+        .readings-list li:before {
+            content: "✦";
+            position: absolute;
+            left: 0;
+            color: var(--primary-color);
+        }
+        
+        .issues-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .issue-card {
+            background: var(--light-bg);
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            transition: transform 0.3s;
+        }
+        
+        .issue-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary-color);
+        }
+        
+        .issue-icon {
+            font-size: clamp(1.8rem, 4vw, 2.2rem);
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+        
+        .issue-card h3 {
+            font-family: "carilliantine", serif;
+            font-size: clamp(1.3rem, 3vw, 1.6rem);
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+        
+        .issue-card p {
+            font-family: "futura-pt", sans-serif;
+            color: var(--secondary-color);
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+        
+        /* Servicios - MENU HORIZONTAL */
+        .services-menu {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .service-menu-btn {
+            background: transparent;
+            color: var(--secondary-color);
+            border: 1px solid var(--border-color);
+            padding: 0.6rem 1rem;
+            font-family: "new-astro", sans-serif;
+            font-size: 0.8rem;
+            cursor: pointer;
+            border-radius: 15px;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        
+        .service-menu-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+        
+        .service-menu-btn.active {
+            background: var(--border-color);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+        
+        .services-category {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+        
+        .services-category.active {
+            display: block;
+        }
+        
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+        
+        .service-card {
+            background: var(--light-bg);
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .service-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-5px);
+        }
+        
+        .service-card h3 {
+            font-family: "carilliantine", serif;
+            font-size: clamp(1.2rem, 2.5vw, 1.5rem);
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+        
+        .service-price {
+            font-family: "new-astro", sans-serif;
+            font-size: clamp(1.1rem, 2.5vw, 1.3rem);
+            color: #f8e9f0;
+            margin-bottom: 1rem;
+        }
+        
+        .service-description {
+            font-family: "futura-pt", sans-serif;
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        
+        .service-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--primary-color);
+            color: var(--dark-bg);
+            padding: 0.3rem 0.7rem;
+            border-radius: 15px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+        
+        /* Botones de agregar/quitar servicio */
+        .service-actions {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .quantity-btn {
+            background: var(--primary-color);
+            color: var(--dark-bg);
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        
+        .quantity-btn:hover {
+            background: var(--secondary-color);
+            transform: scale(1.1);
+        }
+        
+        .quantity-display {
+            min-width: 30px;
+            text-align: center;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .add-to-cart-btn {
+            background: transparent;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: "new-astro", sans-serif;
+            font-size: 0.8rem;
+            transition: all 0.3s;
+        }
+        
+        .add-to-cart-btn:hover {
+            background: var(--primary-color);
+            color: var(--dark-bg);
+        }
+        
+        /* Sección de promociones */
+        .promotions-section {
+            background: linear-gradient(135deg, rgba(255, 142, 199, 0.1), rgba(232, 185, 208, 0.05));
+            padding: 2rem;
+            border-radius: 15px;
+            border: 1px solid var(--primary-color);
+            margin-top: 2rem;
+        }
+        
+        .promotion-card {
+            background: rgba(45, 15, 31, 0.5);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s;
+        }
+        
+        .promotion-card:hover {
+            border-color: var(--primary-color);
+        }
+        
+        .promotion-card h4 {
+            font-family: "carilliantine", serif;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+        }
+        
+        .promotion-description {
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        
+        .promotion-badge {
+            background: #ffd700;
+            color: #2d0f1f;
+            padding: 0.2rem 0.6rem;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+        
+        .promotion-active {
+            border-left: 4px solid #ffd700;
+        }
+        
+        /* Formulario de cita */
+        .appointment-form {
+            background: var(--light-bg);
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .location-note {
+            background: rgba(255, 142, 199, 0.1);
+            border: 1px solid var(--primary-color);
+            border-radius: 5px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            font-family: "new-astro", sans-serif;
+            color: var(--primary-color);
+            font-size: 0.9rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-family: "new-astro", sans-serif;
+            color: var(--primary-color);
+            font-size: 0.95rem;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.8rem;
+            background: rgba(45, 15, 31, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-family: "futura-pt", sans-serif;
+            font-size: 0.95rem;
+            color: #f8e9f0;
+            transition: border-color 0.3s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        
+        textarea.form-control {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .radio-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .radio-option {
+            display: flex;
+            align-items: center;
+        }
+        
+        .radio-option input {
+            margin-right: 0.5rem;
+            accent-color: var(--primary-color);
+        }
+        
+        .radio-option label {
+            margin-bottom: 0;
+            font-family: "futura-pt", sans-serif;
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+        }
+        
+        /* Sección de servicios seleccionados */
+        .selected-services {
+            background: rgba(255, 142, 199, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .selected-services h3 {
+            color: var(--primary-color);
+            font-family: "carilliantine", serif;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .selected-service-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .selected-service-item:last-child {
+            border-bottom: none;
+        }
+        
+        .service-item-info {
+            flex: 1;
+        }
+        
+        .service-item-name {
+            font-weight: bold;
+            color: var(--primary-color);
+            font-family: "carilliantine", serif;
+        }
+        
+        .service-item-price {
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+        }
+        
+        .service-item-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .remove-service-btn {
+            background: transparent;
+            color: #ff6b6b;
+            border: 1px solid #ff6b6b;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        
+        .remove-service-btn:hover {
+            background: #ff6b6b;
+            color: white;
+        }
+        
+        .empty-cart {
+            text-align: center;
+            color: var(--secondary-color);
+            padding: 2rem;
+            font-style: italic;
+        }
+        
+        .cart-total {
+            text-align: right;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+            font-family: "carilliantine", serif;
+            font-size: 1.2rem;
+            color: var(--primary-color);
+        }
+        
+        /* Sección de domicilio */
+        .domicilio-section {
+            display: none;
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            background: rgba(255, 142, 199, 0.05);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .domicilio-section.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        
+        .warning-note {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid #ffd700;
+            border-radius: 5px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            font-family: "new-astro", sans-serif;
+            color: #ffd700;
+            font-size: 0.9rem;
+        }
+        
+        /* Estilos para el mapa */
+        #map {
+            height: 300px;
+            width: 100%;
+            border-radius: 8px;
+            border: 2px solid var(--primary-color);
+            background: #1a0f1f;
+        }
+        
+        .leaflet-container {
+            background: #1a0f1f;
+            font-family: "futura-pt", sans-serif;
+        }
+        
+        .map-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 142, 199, 0.9);
+            padding: 8px 12px;
+            border-radius: 15px;
+            color: #2d0f1f;
+            font-size: 0.75rem;
+            z-index: 1000;
+            font-weight: bold;
+            border: 2px solid #ff8ec7;
+        }
+        
+        .map-container {
+            margin-top: 1rem;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+        
+        /* Estilo personalizado para el marcador */
+        .custom-marker {
+            background: #ff8ec7;
+            border: 3px solid #2d0f1f;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            box-shadow: 0 0 10px rgba(255, 142, 199, 0.8);
+        }
+        
+        .location-info {
+            background: linear-gradient(135deg, rgba(255, 142, 199, 0.1), rgba(232, 185, 208, 0.1));
+            border: 1px solid var(--primary-color);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .manual-address-section {
+            margin-top: 1rem;
+            padding: 1.5rem;
+            background: rgba(255, 142, 199, 0.05);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+        
+        /* Sección de cumpleaños */
+        .birthday-section {
+            display: none;
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 8px;
+            border: 1px solid #ffd700;
+        }
+        
+        .birthday-section.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        
+        .birthday-warning {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid #ff6b6b;
+            border-radius: 5px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-family: "new-astro", sans-serif;
+            color: #ff6b6b;
+            font-size: 0.9rem;
+        }
+        
+        /* Mensajes de confirmación */
+        .confirmation-messages {
+            margin-top: 1.5rem;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 1rem;
+            color: var(--primary-color);
+            font-family: "new-astro", sans-serif;
+        }
+        
+        .success-message {
+            display: none;
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+            padding: 1rem;
+            text-align: center;
+            font-family: "new-astro", sans-serif;
+            color: #00ff00;
+        }
+        
+        .error-message {
+            display: none;
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid #ff0000;
+            border-radius: 5px;
+            padding: 1rem;
+            text-align: center;
+            font-family: "new-astro", sans-serif;
+            color: #ff0000;
+        }
+        
+        /* Sección de comentarios */
+        .comments-section {
+            margin-top: 3rem;
+            padding: 2rem 0;
+            background: var(--light-bg);
+            border-radius: 15px;
+            border: 1px solid var(--border-color);
+        }
+
+        .comment-form {
+            background: rgba(255, 142, 199, 0.05);
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .comment-form h3 {
+            color: var(--primary-color);
+            font-family: "carilliantine", serif;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            font-size: 1.8rem;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .comments-list {
+            display: grid;
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .comment-card {
+            background: rgba(45, 15, 31, 0.5);
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s;
+        }
+
+        .comment-card:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .comment-author {
+            font-weight: bold;
+            color: var(--primary-color);
+            font-family: "carilliantine", serif;
+        }
+
+        .comment-date {
+            color: var(--secondary-color);
+            font-size: 0.8rem;
+        }
+
+        .comment-text {
+            color: var(--secondary-color);
+            line-height: 1.5;
+        }
+
+        .anonymous-badge {
+            background: var(--primary-color);
+            color: var(--dark-bg);
+            padding: 0.2rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            margin-left: 0.5rem;
+        }
+
+        .empty-comments {
+            text-align: center;
+            color: var(--secondary-color);
+            padding: 2rem;
+            font-style: italic;
+        }
+        
+        /* Footer */
+        footer {
+            background: var(--medium-bg);
+            padding: 2rem 0 1rem;
+            margin-top: 3rem;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .footer-section h3 {
+            margin-bottom: 1rem;
+            font-family: "carilliantine", serif;
+            color: var(--primary-color);
+            font-size: clamp(1.1rem, 2.5vw, 1.3rem);
+        }
+        
+        .footer-section p {
+            margin-bottom: 0.7rem;
+            font-family: "futura-pt", sans-serif;
+            color: var(--secondary-color);
+            font-size: 0.9rem;
+        }
+        
+        .social-link {
+            color: var(--primary-color);
+            text-decoration: underline;
+            transition: all 0.3s;
+        }
+        
+        .social-link:hover {
+            color: var(--secondary-color);
+        }
+        
+        .footer-bottom {
+            text-align: center;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(90, 42, 63, 0.5);
+            font-family: "new-astro", sans-serif;
+            color: var(--secondary-color);
+            font-size: 0.85rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            header {
+                padding: 0.8rem 0;
+            }
+            
+            .tabs {
+                gap: 3px;
+            }
+            
+            .tab-button {
+                padding: 0.4rem 0.6rem;
+                font-size: 0.8rem;
+                border-radius: 15px;
+            }
+            
+            .hero {
+                padding: 2rem 0;
+            }
+            
+            .appointment-form {
+                padding: 1.2rem;
+            }
+            
+            #map {
+                height: 250px;
+            }
+            
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .services-menu {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .service-menu-btn {
+                width: 100%;
+                max-width: 250px;
+            }
+            
+            .selected-service-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .service-item-actions {
+                align-self: flex-end;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header-content {
+                padding: 0 10px;
+            }
+            
+            .tab-button {
+                font-size: 0.75rem;
+                padding: 0.35rem 0.5rem;
+            }
+            
+            .hero {
+                padding: 1.5rem 0;
+            }
+            
+            .tab-content {
+                padding: 1.5rem 0;
+            }
+            
+            .about-card, .issue-card, .service-card {
+                padding: 1.2rem;
+            }
+            
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            #map {
+                height: 200px;
+            }
+            
+            .manual-address-section, .comment-form {
+                padding: 1rem;
+            }
+            
+            .service-actions {
+                flex-direction: column;
+                gap: 0.8rem;
+            }
+        }
+        
+        @media (max-width: 360px) {
+            .tab-button {
+                font-size: 0.7rem;
+                padding: 0.3rem 0.4rem;
+            }
+            
+            .logo {
+                font-size: 1.6rem;
+            }
+            
+            .tagline {
+                font-size: 0.8rem;
+            }
+            
+            #map {
+                height: 180px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header y Navegación -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">Afrody.ta Tarot</div>
+                <div class="tagline">Una lectura precisa, íntima y guiada por conocimiento</div>
+                <ul class="tabs">
+                    <li class="tab">
+                        <button class="tab-button active" data-tab="inicio">Inicio</button>
+                    </li>
+                    <li class="tab">
+                        <button class="tab-button" data-tab="problemas">Problemas</button>
+                    </li>
+                    <li class="tab">
+                        <button class="tab-button" data-tab="servicios">Servicios</button>
+                    </li>
+                    <li class="tab">
+                        <button class="tab-button" data-tab="cita">Agendar</button>
+                    </li>
+                    <li class="tab">
+                        <button class="tab-button" data-tab="comentarios">Comentarios</button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido de las pestañas -->
+    <main class="container">
+        <!-- Pestaña Inicio -->
+        <section id="inicio" class="tab-content active">
+            <div class="hero">
+                <div class="hero-content">
+                    <h1>Del callejón sin salida al camino claro</h1>
+                    <p>Una lectura precisa, íntima y guiada por conocimiento para quienes buscan respuestas auténticas y dirección en los momentos importantes.</p>
+                    
+                    <div class="cta-section">
+                        <p>¿Qué te depara el futuro cercano? ¿Qué pistas te dan las estrellas? ¡Descúbrelo ahora mismo!</p>
+                        <button class="btn" data-tab="cita">Recibir Lectura</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sección El Tarot en Inicio -->
+            <h2 class="section-title">EL TAROT</h2>
+            <p class="section-subtitle">Una herramienta de interpretación simbólica para ofrecer perspectiva, reflexión y guía</p>
+            
+            <div class="about-content">
+                <div class="about-card">
+                    <h3>¿Qué es el Tarot?</h3>
+                    <p>El tarot es una herramienta de interpretación simbólica que utiliza una baraja estructurada para ofrecer perspectiva, reflexión y guía sobre distintos aspectos de la vida. A través de sus imágenes, arquetipos y significados, el tarot permite analizar situaciones presentes, comprender procesos personales y explorar posibles caminos o decisiones.</p>
+                    <p>No predice el futuro de manera absoluta; más bien, funciona como un recurso de autoconocimiento, donde cada carta actúa como un espejo que refleja emociones, patrones, oportunidades y desafíos. La lectura se basa en la conexión entre las cartas, la intuición y el contexto de la persona que consulta.</p>
+                    <p>En esencia, el tarot es un espacio de diálogo y comprensión, una herramienta que ayuda a ver lo que quizá no es tan evidente y a conectar con la propia intuición de una forma más profunda y organizada.</p>
+                </div>
+                <div class="about-card">
+                    <h3>Beneficios del Tarot</h3>
+                    <ul class="readings-list">
+                        <li><strong>Claridad en situaciones confusas:</strong> El tarot ayuda a entender mejor lo que está ocurriendo a nivel personal, emocional o externo, ofreciendo una visión más ordenada y objetiva.</li>
+                        <li><strong>Apoyo en la toma de decisiones:</strong> Permite analizar opciones, posibles consecuencias y caminos alternativos, ayudando a elegir con mayor seguridad y conciencia.</li>
+                        <li><strong>Autoconocimiento y reflexión personal:</strong> Las cartas funcionan como un espejo que muestra patrones, emociones ocultas, fortalezas y áreas que necesitan atención.</li>
+                        <li><strong>Comprensión de procesos emocionales:</strong> Ayuda a identificar bloqueos, miedos, expectativas y deseos profundos, facilitando la gestión emocional.</li>
+                        <li><strong>Perspective externa y nueva visión:</strong> Una lectura brinda un punto de vista distinto al habitual, lo que puede abrir oportunidades de cambio o nuevas formas de entender una situación.</li>
+                        <li><strong>Identificación de oportunidades y desafíos:</strong> El tarot muestra elementos que quizá no son evidentes a simple vista, ayudando a anticipar o preparar mejor decisiones importantes.</li>
+                        <li><strong>Acompañamiento en momentos importantes:</strong> Sirve como una herramienta de apoyo cuando la persona pasa por cambios, incertidumbre o periodos de crecimiento.</li>
+                        <li><strong>Conexión con la intuición:</strong> Promueve una sensación de claridad interna, ayudando a escuchar mejor la propia voz interior y confiar más en ella.</li>
+                        <li><strong>Organización mental y emocional:</strong> Al ver representado un problema o proceso en las cartas, es más fácil comprenderlo, procesarlo y encontrar soluciones.</li>
+                        <li><strong>Bienestar y calma:</strong> Una lectura bien realizada puede generar alivio, tranquilidad y una mejor comprensión de lo que se está viviendo.</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 2rem; font-family: 'new-astro', sans-serif; color: var(--secondary-color);">
+                <p>11:11 &nbsp; | &nbsp; @Afrody.ta_tt</p>
+            </div>
+        </section>
+
+        <!-- Pestaña Problemas -->
+        <section id="problemas" class="tab-content">
+            <h2 class="section-title">¿QUÉ PROBLEMAS ABORDAMOS?</h2>
+            <p class="section-subtitle">Nuestras lecturas te ayudan a encontrar claridad en las áreas más importantes de tu vida</p>
+            
+            <div class="issues-grid">
+                <div class="issue-card">
+                    <div class="issue-icon">🔮</div>
+                    <h3>Futuro</h3>
+                    <p>¿Qué eventos importantes te esperan en el futuro cercano?</p>
+                </div>
+                <div class="issue-card">
+                    <div class="issue-icon">💖</div>
+                    <h3>Amor</h3>
+                    <p>¿Están destinados a estar juntos? ¿Cómo recuperar o atraer el amor?</p>
+                </div>
+                <div class="issue-card">
+                    <div class="issue-icon">💰</div>
+                    <h3>Finanzas</h3>
+                    <p>¿Vale la pena cambiar de trabajo? ¿Dónde buscar oportunidades financieras?</p>
+                </div>
+                <div class="issue-card">
+                    <div class="issue-icon">📜</div>
+                    <h3>Pasado</h3>
+                    <p>¿Qué lecciones son importantes que aprendas?</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pestaña Servicios ACTUALIZADA CON BOTONES DE AGREGAR/QUITAR -->
+        <section id="servicios" class="tab-content">
+            <h2 class="section-title">NUESTROS SERVICIOS</h2>
+            <p class="section-subtitle">Selecciona la categoría de lectura que necesitas</p>
+            
+            <div class="services-menu">
+                <button class="service-menu-btn active" data-category="basicas">BÁSICAS</button>
+                <button class="service-menu-btn" data-category="especiales">ESPECIALES</button>
+                <button class="service-menu-btn" data-category="promociones">PROMOCIONES</button>
+            </div>
+            
+            <!-- Lecturas Básicas -->
+            <div class="services-category active" id="basicas">
+                <div class="services-grid">
+                    <!-- Los servicios básicos se generarán dinámicamente -->
+                </div>
+            </div>
+            
+            <!-- Lecturas Especiales -->
+            <div class="services-category" id="especiales">
+                <div class="services-grid">
+                    <!-- Los servicios especiales se generarán dinámicamente -->
+                </div>
+            </div>
+            
+            <!-- Promociones -->
+            <div class="services-category" id="promociones">
+                <div class="promotions-section">
+                    <h3 class="section-title">🎁 PROMOCIONES Y DESCUENTOS</h3>
+                    
+                    <div class="promotion-card promotion-active" id="promo3x2">
+                        <h4>3x2 <span class="promotion-badge">ACTIVA</span></h4>
+                        <div class="promotion-description">
+                            Pide 3 lecturas arriba de $250 y llévate una lectura gratis (valor máximo $180). 
+                            <strong>Promoción permanente.</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="promotion-card promotion-active">
+                        <h4>Lectura Gratis <span class="promotion-badge">ACTIVA</span></h4>
+                        <div class="promotion-description">
+                            En compras superiores a $500, recibe una lectura adicional gratis.
+                            <strong>Promoción permanente.</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="promotion-card" id="promoCartaAnio">
+                        <h4>Carta del Año <span class="promotion-badge" id="badgeCartaAnio">TEMPORADA</span></h4>
+                        <div class="promotion-description">
+                            Al comprar una Lectura del Año, recibe gratis tu Carta Arcano del Año.
+                            <strong id="textCartaAnio">Válido del 28 de Diciembre al 4 de Enero.</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="promotion-card promotion-active" id="promoCumpleanos">
+                        <h4>¡Feliz Cumpleaños! <span class="promotion-badge" id="badgeCumpleanos">ESPECIAL</span></h4>
+                        <div class="promotion-description">
+                            Lectura de cumpleaños gratis (válida 3 días antes y después de tu cumpleaños).
+                            <strong id="textCumpleanos">Solo una vez al año por persona. Se solicitará identificación oficial.</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="promotion-card promotion-active">
+                        <h4>Sesión Número 6 <span class="promotion-badge">ACTIVA</span></h4>
+                        <div class="promotion-description">
+                            En tu sexta sesión, recibe una lectura general gratis.
+                            <strong>Para clientes frecuentes.</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="promotion-card" id="promoBuenFin">
+                        <h4>Buen Fin <span class="promotion-badge" id="badgeBuenFin">INACTIVA</span></h4>
+                        <div class="promotion-description">
+                            20% de descuento en todas las lecturas.
+                            <strong id="textBuenFin">Próximamente del 12 al 20 de noviembre.</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="promotion-card" id="promoAnioNuevo">
+                        <h4>Año Nuevo <span class="promotion-badge" id="badgeAnioNuevo">PRÓXIMAMENTE</span></h4>
+                        <div class="promotion-description">
+                            10% de descuento en todas las lecturas.
+                            <strong id="textAnioNuevo">Promoción de año nuevo.</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="promotion-card" id="promoMiCumple">
+                        <h4>¡ES MI CUMPLEAÑOS! <span class="promotion-badge" id="badgeMiCumple">ESPECIAL</span></h4>
+                        <div class="promotion-description">
+                            5% de descuento en cualquier lectura el 13 de Octubre.
+                            <strong>Celebrando mi cumpleaños contigo.</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="promotion-card promotion-active">
+                        <h4>Te Recomendé <span class="promotion-badge">ACTIVA</span></h4>
+                        <div class="promotion-description">
+                            Trae un nuevo cliente y recibe 15% de descuento en tu próxima compra (mínimo $150).
+                            <strong>Programa de referidos permanente.</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 2rem;">
+                <button class="btn" data-tab="cita" style="font-size: 1.1rem; padding: 1rem 2rem;">
+                    💫 Ver Servicios Seleccionados
+                </button>
+            </div>
+        </section>
+
+        <!-- Pestaña Agendar Cita ACTUALIZADA CON CARRITO -->
+        <section id="cita" class="tab-content">
+            <h2 class="section-title">AGENDA TU CITA</h2>
+            <p class="section-subtitle">Completa el formulario y nos pondremos en contacto contigo para confirmar tu sesión</p>
+            
+            <div class="appointment-form">
+                <!-- Sección de servicios seleccionados -->
+                <div class="selected-services" id="selectedServices">
+                    <h3>🛒 Servicios Seleccionados</h3>
+                    <div class="empty-cart" id="emptyCart">
+                        No hay servicios seleccionados. Agrega servicios desde la pestaña "Servicios".
+                    </div>
+                    <div id="servicesList"></div>
+                    <div class="cart-total" id="cartTotal" style="display: none;">
+                        Total: $<span id="totalAmount">0</span>
+                    </div>
+                </div>
+                
+                <div class="location-note">
+                    <strong>✨ Importante:</strong> Las consultas a domicilio solo están disponibles en Ciudad Madero - Tampico, Tamaulipas. Servicio con costo adicional de $50 pesos.
+                </div>
+                
+                <form id="appointmentForm">
+                    <div class="form-group">
+                        <label for="name">Nombre completo *</label>
+                        <input type="text" id="name" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phone">Número de celular *</label>
+                        <input type="tel" id="phone" class="form-control" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email">Correo electrónico *</label>
+                        <input type="email" id="email" class="form-control" required>
+                    </div>
+                    
+                    <!-- Sección de cumpleaños (solo para lectura de cumpleaños) -->
+                    <div class="birthday-section" id="birthdaySection">
+                        <div class="warning-note">
+                            <strong>🎂 LECTURA DE CUMPLEAÑOS GRATIS</strong><br>
+                            Válida 3 días antes y después de tu cumpleaños. Solo una vez al año por persona.
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="birthday">Fecha de cumpleaños *</label>
+                            <input type="date" id="birthday" class="form-control">
+                            <small style="color: var(--secondary-color);">Se solicitará identificación oficial para validar</small>
+                        </div>
+                        
+                        <div class="birthday-warning" id="birthdayWarning" style="display: none;">
+                            ⚠️ Esta lectura solo está disponible 3 días antes o después de tu cumpleaños. Por favor selecciona otra lectura o verifica tu fecha.
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Tipo de consulta</label>
+                        <div class="radio-group">
+                            <div class="radio-option">
+                                <input type="radio" id="domicilio" name="consultationType" value="domicilio" required>
+                                <label for="domicilio">A domicilio (+$50 adicional)</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" id="online" name="consultationType" value="online">
+                                <label for="online">En línea (WhatsApp)</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sección de domicilio -->
+                    <div class="domicilio-section" id="domicilioSection">
+                        <div class="warning-note">
+                            <strong>📍 Zona de Servicio:</strong> Ciudad Madero y Tampico, Tamaulipas. Si tu ubicación está fuera de estas zonas, selecciona "En línea".
+                        </div>
+                        
+                        <!-- Mapa -->
+                        <div class="form-group">
+                            <label>Selecciona tu ubicación en el mapa</label>
+                            <div class="map-container">
+                                <div class="map-overlay">
+                                    📍 Haz clic en tu ubicación
+                                </div>
+                                <div id="map"></div>
+                            </div>
+                            <small style="color: var(--secondary-color);">Haz clic en el mapa para marcar tu ubicación exacta</small>
+                        </div>
+                        
+                        <!-- Información de la ubicación seleccionada -->
+                        <div class="location-info" id="locationInfo" style="display: none;">
+                            <p><strong>🎯 Ubicación confirmada:</strong> <span id="selectedLocation"></span></p>
+                            <p><strong>📏 Coordenadas:</strong> <span id="coordinates"></span></p>
+                        </div>
+                        
+                        <!-- Dirección manual -->
+                        <div class="manual-address-section">
+                            <div class="form-group">
+                                <label for="direccionCompleta">🏠 Dirección completa</label>
+                                <textarea id="direccionCompleta" class="form-control" placeholder="Escribe tu dirección completa: calle, número, colonia, entre calles, referencia..." required></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="codigoPostal">📮 Código Postal</label>
+                                <input type="text" id="codigoPostal" class="form-control" placeholder="89400" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="comments">Comentarios adicionales</label>
+                        <textarea id="comments" class="form-control" placeholder="Cuéntanos más sobre tu situación, preguntas específicas o cualquier información que consideres relevante..."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn" style="width: 100%;" id="submitButton">Enviar solicitud de cita</button>
+                    
+                    <!-- Mensajes de confirmación -->
+                    <div class="confirmation-messages">
+                        <div class="loading" id="loadingMessage">
+                            Enviando tu solicitud...
+                        </div>
+                        
+                        <div class="success-message" id="successMessage">
+                            ¡Gracias! Tu solicitud ha sido enviada correctamente. Nos pondremos en contacto contigo en un plazo de 24 horas.
+                        </div>
+                        
+                        <div class="error-message" id="errorMessage">
+                            Ha ocurrido un error al enviar tu solicitud. Por favor, intenta nuevamente o contáctanos directamente.
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- Pestaña Comentarios -->
+        <section id="comentarios" class="tab-content">
+            <h2 class="section-title">COMENTARIOS Y TESTIMONIOS</h2>
+            <p class="section-subtitle">Comparte tu experiencia o deja un mensaje anónimo</p>
+            
+            <div class="comments-section">
+                <div class="comment-form">
+                    <h3>💬 Deja tu comentario</h3>
+                    <form id="commentForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="commentName">Nombre *</label>
+                                <input type="text" id="commentName" class="form-control" placeholder="Tu nombre" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="commentPhone">Número de teléfono *</label>
+                                <input type="tel" id="commentPhone" class="form-control" placeholder="Tu número de teléfono" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="commentText">Tu comentario *</label>
+                            <textarea id="commentText" class="form-control" placeholder="Comparte tu experiencia, testimonio o cualquier mensaje que quieras dejar..." required rows="5"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="radio-option">
+                                <input type="checkbox" id="isAnonymous">
+                                <label for="isAnonymous">Publicar como anónimo (tu nombre y teléfono no se mostrarán)</label>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn" style="width: 100%;">Publicar comentario</button>
+                    </form>
+                </div>
+                
+                <div class="comments-list" id="commentsList">
+                    <div class="empty-comments">
+                        🌟 Sé el primero en dejar un comentario
+                    </div>
+                    <!-- Los comentarios se agregarán aquí dinámicamente -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Contacto</h3>
+                    <p>Email: afrody.taa@outlook.com</p>
+                    <p>Teléfono: +52 833 437 7000</p>
+                    <p>Dirección: Ciudad Madero - Tampico, Tamaulipas, México</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Horarios de Atención</h3>
+                    <p>✦ Lunes a Viernes: 8:00 - 12:00 / 20:00 - 23:00</p>
+                    <p>✦ Sábados: 7:00 - 11:00</p>
+                    <p>✦ Domingos: Cerrado</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Síguenos</h3>
+                    <p>Instagram: <a href="https://www.instagram.com/afrody.ta_tt?igsh=MTk4bTJ0bmtvMnpvbA==" class="social-link" target="_blank">@Afrody.ta_tt</a></p>
+                    <p>Canal WhatsApp: <a href="https://whatsapp.com/channel/0029VampIdu0bIdemvm4Jf25" class="social-link" target="_blank">Lectura de Cartas, Magia, Manifestación y Más</a></p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 AFRODYTA DESING. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // Datos de servicios
+        const servicesData = {
+            basicas: [
+                { id: 'general', name: 'Lectura General', price: 135, description: 'Una visión completa de tu situación actual y energías que te rodean.' },
+                { id: 'general_3p', name: 'General + 3 Preguntas', price: 180, description: 'Lectura general más respuestas específicas a 3 preguntas de tu interés.' },
+                { id: '1p', name: '1 Pregunta Específica', price: 50, description: 'Respuesta clara y directa a una pregunta concreta que tengas.' },
+                { id: '2p', name: '2 Preguntas', price: 65, description: 'Respuestas detalladas a dos preguntas importantes para ti.' },
+                { id: '3p', name: '3 Preguntas', price: 90, description: 'Análisis completo de tres áreas específicas de tu interés.' },
+                { id: 'semanal', name: 'Lectura Semanal', price: 185, description: 'Pronóstico energético para los próximos 7 días.' },
+                { id: 'mes', name: 'Lectura del Mes', price: 230, description: 'Visión completa de las energías del mes entrante.' },
+                { id: 'dia', name: 'Lectura del Día', price: 120, description: 'Guía energética para tomar las mejores decisiones hoy.' },
+                { id: 'anio', name: 'Lectura del Año', price: 450, description: 'Pronóstico anual completo con tendencias y oportunidades.' },
+                { id: 'amorosa', name: 'Lectura General Amorosa', price: 150, description: 'Enfoque especial en relaciones sentimentales y conexiones.' }
+            ],
+            especiales: [
+                { id: 'escudo', name: 'Escudo de Compras', price: 100, description: 'Protección energética para tus compras e inversiones.' },
+                { id: 'hora_espejo', name: 'Hora Espejo', price: 111, description: 'Interpretación de mensajes divinos a través de horas espejo.' },
+                { id: 'mercurio', name: 'Mercurio Retrógrado', price: 190, description: 'Guía para navegar períodos de Mercurio retrógrado.' },
+                { id: 'casi_algo', name: 'Casi Algo', price: 155, description: 'Análisis de situaciones de "casi relaciones" o conexiones ambiguas.' },
+                { id: 'pareja', name: 'Lectura de Pareja', price: 250, description: 'Análisis completo de la dinámica de pareja y compatibilidad.' },
+                { id: 'crush', name: 'Crush', price: 270, description: 'Insight sobre esa persona especial y posibilidades de conexión.' },
+                { id: 'ex', name: 'Ex', price: 290, description: 'Análisis de relaciones pasadas y cierres kármicos.' },
+                { id: 'esposos', name: '¿Cómo seremos como Esposos?', price: 380, description: 'Visión del potencial de vida en pareja a largo plazo.' },
+                { id: 'corazon', name: 'Lectura del Corazón', price: 200, description: 'Análisis profundo de tus emociones y bloqueos sentimentales.' },
+                { id: 'amantes', name: 'Amantes', price: 300, description: 'Insight sobre relaciones pasionales y conexiones intensas.' },
+                { id: 'compatibilidad', name: 'Compatibilidad', price: 222, description: 'Análisis detallado de compatibilidad energética y emocional.' },
+                { id: 'que_siente', name: '¿Qué siente por mí?', price: 240, description: 'Descubre los sentimientos y pensamientos de esa persona especial.' },
+                { id: 'hack_pareja', name: 'Hack Pareja', price: 280, description: 'Estrategias energéticas para mejorar tu relación de pareja.' },
+                { id: 'tinder', name: 'Tinder', price: 400, description: 'Guía para citas en línea y conexiones digitales auténticas.' },
+                { id: 'cupido', name: 'Consejo de Cupido', price: 400, description: 'Orientación divina para el amor y las relaciones.' },
+                { id: 'sexo', name: 'Sexo', price: 269, description: 'Análisis de compatibilidad sexual y conexión íntima.' },
+                { id: 'lo_que_ve', name: 'Lo que ve y piensa de mí', price: 340, description: 'Insight sobre la percepción que otros tienen de ti.' },
+                { id: 'evolucion', name: 'Evolución en Pareja', price: 340, description: 'Proyección del crecimiento y desarrollo de la relación.' },
+                { id: 'cumpleanos', name: 'Lectura de Cumpleaños', price: 0, description: 'Lectura especial de cumpleaños gratis (válida 3 días antes/después)' }
+            ]
+        };
+
+        // Carrito de servicios
+        let selectedServices = JSON.parse(localStorage.getItem('afrodyta_cart')) || [];
+
+        // Mapa
+        let map;
+        let marker;
+        let selectedLocation = null;
+
+        function initMap() {
+            const madero = [22.2699999, -97.8363];
+            
+            map = L.map('map').setView(madero, 14);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: 'OpenStreetMap',
+                maxZoom: 18
+            }).addTo(map);
+            
+            const pinkIcon = L.divIcon({
+                className: 'custom-marker',
+                html: '📍',
+                iconSize: [30, 30],
+                iconAnchor: [15, 30]
+            });
+            
+            marker = L.marker(madero, {
+                draggable: true,
+                icon: pinkIcon
+            }).addTo(map);
+            
+            marker.bindPopup("<div style='text-align: center;'><strong>Tu ubicación</strong><br>Arrastra el marcador</div>").openPopup();
+            
+            marker.on('dragend', function(event) {
+                const marker = event.target;
+                const position = marker.getLatLng();
+                updateLocation(position);
+            });
+            
+            map.on('click', function(event) {
+                const position = event.latlng;
+                marker.setLatLng(position);
+                updateLocation(position);
+            });
+        }
+
+        function updateLocation(position) {
+            selectedLocation = {
+                lat: position.lat,
+                lng: position.lng
+            };
+            
+            document.getElementById('selectedLocation').textContent = `Lat: ${position.lat.toFixed(6)}, Lng: ${position.lng.toFixed(6)}`;
+            document.getElementById('coordinates').textContent = `${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}`;
+            document.getElementById('locationInfo').style.display = 'block';
+            
+            checkCoverageArea(position.lat, position.lng);
+        }
+
+        function checkCoverageArea(lat, lng) {
+            const coverageArea = {
+                north: 22.35, south: 22.20,
+                east: -97.75, west: -97.95
+            };
+
+            const isInCoverageArea = 
+                lat >= coverageArea.south && lat <= coverageArea.north && 
+                lng >= coverageArea.west && lng <= coverageArea.east;
+
+            if (!isInCoverageArea) {
+                marker.bindPopup("<div style='text-align: center;'><strong>⚠️ Fuera de cobertura</strong><br>Selecciona 'En línea'</div>").openPopup();
+            } else {
+                marker.bindPopup("<div style='text-align: center;'><strong>✅ En zona de cobertura</strong></div>").openPopup();
+            }
+        }
+
+        // Sistema de carrito
+        function addToCart(service) {
+            const existingService = selectedServices.find(item => item.id === service.id);
+            
+            if (existingService) {
+                existingService.quantity += 1;
+            } else {
+                selectedServices.push({
+                    ...service,
+                    quantity: 1
+                });
+            }
+            
+            saveCart();
+            updateCartDisplay();
+            
+            // Mostrar mensaje de confirmación
+            showNotification(`✅ ${service.name} agregado al carrito`);
+        }
+
+        function removeFromCart(serviceId) {
+            selectedServices = selectedServices.filter(item => item.id !== serviceId);
+            saveCart();
+            updateCartDisplay();
+        }
+
+        function updateQuantity(serviceId, change) {
+            const service = selectedServices.find(item => item.id === serviceId);
+            if (service) {
+                service.quantity += change;
+                if (service.quantity <= 0) {
+                    removeFromCart(serviceId);
+                } else {
+                    saveCart();
+                    updateCartDisplay();
+                }
+            }
+        }
+
+        function saveCart() {
+            localStorage.setItem('afrodyta_cart', JSON.stringify(selectedServices));
+        }
+
+        function updateCartDisplay() {
+            const servicesList = document.getElementById('servicesList');
+            const emptyCart = document.getElementById('emptyCart');
+            const cartTotal = document.getElementById('cartTotal');
+            const totalAmount = document.getElementById('totalAmount');
+            
+            if (selectedServices.length === 0) {
+                emptyCart.style.display = 'block';
+                servicesList.innerHTML = '';
+                cartTotal.style.display = 'none';
+                return;
+            }
+            
+            emptyCart.style.display = 'none';
+            
+            let total = 0;
+            let hasBirthdayReading = false;
+            
+            servicesList.innerHTML = selectedServices.map(service => {
+                const serviceTotal = service.price * service.quantity;
+                total += serviceTotal;
+                
+                if (service.id === 'cumpleanos') {
+                    hasBirthdayReading = true;
+                }
+                
+                return `
+                    <div class="selected-service-item">
+                        <div class="service-item-info">
+                            <div class="service-item-name">${service.name}</div>
+                            <div class="service-item-price">$${service.price} x ${service.quantity} = $${serviceTotal}</div>
+                        </div>
+                        <div class="service-item-actions">
+                            <div class="quantity-controls">
+                                <button class="quantity-btn" onclick="updateQuantity('${service.id}', -1)">-</button>
+                                <span class="quantity-display">${service.quantity}</span>
+                                <button class="quantity-btn" onclick="updateQuantity('${service.id}', 1)">+</button>
+                            </div>
+                            <button class="remove-service-btn" onclick="removeFromCart('${service.id}')">×</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            totalAmount.textContent = total;
+            cartTotal.style.display = 'block';
+            
+            // Mostrar/ocultar sección de cumpleaños
+            const birthdaySection = document.getElementById('birthdaySection');
+            if (hasBirthdayReading) {
+                birthdaySection.classList.add('active');
+            } else {
+                birthdaySection.classList.remove('active');
+            }
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: var(--primary-color);
+                color: var(--dark-bg);
+                padding: 1rem 1.5rem;
+                border-radius: 10px;
+                font-family: "new-astro", sans-serif;
+                z-index: 10000;
+                animation: slideIn 0.3s ease-out;
+                box-shadow: 0 4px 15px rgba(255, 142, 199, 0.3);
+            `;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease-in';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+
+        // Generar servicios dinámicamente
+        function generateServices() {
+            for (const category in servicesData) {
+                const container = document.querySelector(`#${category} .services-grid`);
+                if (container) {
+                    container.innerHTML = servicesData[category].map(service => `
+                        <div class="service-card">
+                            <h3>${service.name}</h3>
+                            <div class="service-price">${service.price === 0 ? 'GRATIS' : `$${service.price}`}</div>
+                            <div class="service-description">
+                                ${service.description}
+                            </div>
+                            <div class="service-actions">
+                                <div class="quantity-controls">
+                                    <button class="quantity-btn" onclick="updateQuantity('${service.id}', -1)">-</button>
+                                    <span class="quantity-display">${getServiceQuantity(service.id)}</span>
+                                    <button class="quantity-btn" onclick="updateQuantity('${service.id}', 1)">+</button>
+                                </div>
+                                <button class="add-to-cart-btn" onclick="addToCart(${JSON.stringify(service).replace(/"/g, '&quot;')})">
+                                    ${getServiceQuantity(service.id) > 0 ? 'Actualizar' : 'Agregar'}
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+        }
+
+        function getServiceQuantity(serviceId) {
+            const service = selectedServices.find(item => item.id === serviceId);
+            return service ? service.quantity : 0;
+        }
+
+        // Sistema de comentarios
+        let comments = JSON.parse(localStorage.getItem('afrodyta_comments')) || [];
+
+        function saveComment(comment) {
+            comments.unshift(comment);
+            localStorage.setItem('afrodyta_comments', JSON.stringify(comments));
+            displayComments();
+        }
+
+        function displayComments() {
+            const commentsList = document.getElementById('commentsList');
+            
+            if (comments.length === 0) {
+                commentsList.innerHTML = '<div class="empty-comments">🌟 Sé el primero en dejar un comentario</div>';
+                return;
+            }
+
+            commentsList.innerHTML = comments.map(comment => `
+                <div class="comment-card">
+                    <div class="comment-header">
+                        <div>
+                            <span class="comment-author">${comment.author}</span>
+                            ${comment.isAnonymous ? '<span class="anonymous-badge">Anónimo</span>' : ''}
+                        </div>
+                        <div class="comment-date">${comment.date}</div>
+                    </div>
+                    <div class="comment-text">${comment.text}</div>
+                </div>
+            `).join('');
+        }
+
+        // Validación de cumpleaños
+        function isValidBirthdayForPromotion(birthday) {
+            if (!birthday) return false;
+            
+            const today = new Date();
+            const birthDate = new Date(birthday);
+            
+            const currentYear = today.getFullYear();
+            birthDate.setFullYear(currentYear);
+            
+            const diffTime = Math.abs(today - birthDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            return diffDays <= 3;
+        }
+
+        // Sistema de promociones automáticas
+        function checkPromotions() {
+            const now = new Date();
+            const currentMonth = now.getMonth() + 1;
+            const currentDate = now.getDate();
+            
+            // Promoción Carta del Año (28 Dic - 4 Ene)
+            const isYearEndPromo = 
+                (currentMonth === 12 && currentDate >= 28) || 
+                (currentMonth === 1 && currentDate <= 4);
+            
+            if (isYearEndPromo) {
+                document.getElementById('promoCartaAnio').classList.add('promotion-active');
+                document.getElementById('badgeCartaAnio').textContent = 'ACTIVA';
+                document.getElementById('textCartaAnio').innerHTML = '<strong style="color: #ffd700;">¡ACTIVA AHORA! Válido hasta el 4 de Enero.</strong>';
+            }
+            
+            // Promoción Buen Fin (12-20 de noviembre) - DESACTIVADA POR AHORA
+            const isBuenFin = currentMonth === 11 && currentDate >= 12 && currentDate <= 20;
+            if (isBuenFin) {
+                document.getElementById('promoBuenFin').classList.add('promotion-active');
+                document.getElementById('badgeBuenFin').textContent = 'ACTIVA';
+                document.getElementById('textBuenFin').innerHTML = '<strong style="color: #ffd700;">¡ACTIVA AHORA! 20% de descuento.</strong>';
+            } else {
+                document.getElementById('promoBuenFin').classList.remove('promotion-active');
+                document.getElementById('badgeBuenFin').textContent = 'INACTIVA';
+            }
+            
+            // Promoción Año Nuevo (primera semana de enero)
+            const isNewYearPromo = currentMonth === 1 && currentDate <= 7;
+            if (isNewYearPromo) {
+                document.getElementById('promoAnioNuevo').classList.add('promotion-active');
+                document.getElementById('badgeAnioNuevo').textContent = 'ACTIVA';
+                document.getElementById('textAnioNuevo').innerHTML = '<strong style="color: #ffd700;">¡ACTIVA AHORA! 10% de descuento.</strong>';
+            }
+            
+            // Promoción Mi Cumpleaños (13 de Octubre)
+            const isMyBirthday = currentMonth === 10 && currentDate === 13;
+            if (isMyBirthday) {
+                document.getElementById('promoMiCumple').classList.add('promotion-active');
+                document.getElementById('badgeMiCumple').textContent = '¡HOY!';
+                document.getElementById('promoMiCumple').style.borderLeft = '4px solid #ff8ec7';
+            }
+            
+            updatePromotionCounters();
+        }
+        
+        function updatePromotionCounters() {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            
+            // Contador para Buen Fin
+            const buenFinDate = new Date(currentYear, 10, 12);
+            const daysToBuenFin = Math.ceil((buenFinDate - now) / (1000 * 60 * 60 * 24));
+            
+            if (daysToBuenFin > 0 && daysToBuenFin <= 60) {
+                document.getElementById('textBuenFin').innerHTML = 
+                    `<strong>Inicia en ${daysToBuenFin} días</strong>`;
+            }
+            
+            // Contador para Año Nuevo
+            const newYearDate = new Date(currentYear + 1, 0, 1);
+            const daysToNewYear = Math.ceil((newYearDate - now) / (1000 * 60 * 60 * 24));
+            
+            if (daysToNewYear > 0 && daysToNewYear <= 60) {
+                document.getElementById('textAnioNuevo').innerHTML = 
+                    `<strong>Inicia en ${daysToNewYear} días</strong>`;
+            }
+            
+            // Contador para Mi Cumpleaños
+            const myBirthdayThisYear = new Date(currentYear, 9, 13);
+            const myBirthdayNextYear = new Date(currentYear + 1, 9, 13);
+            const targetBirthday = now < myBirthdayThisYear ? myBirthdayThisYear : myBirthdayNextYear;
+            const daysToMyBirthday = Math.ceil((targetBirthday - now) / (1000 * 60 * 60 * 24));
+            
+            if (daysToMyBirthday > 0 && daysToMyBirthday <= 60) {
+                document.getElementById('promoMiCumple').classList.add('promotion-active');
+                document.getElementById('textCumpleanos').innerHTML = 
+                    `<strong>Falta${daysToMyBirthday === 1 ? ' 1 día' : `n ${daysToMyBirthday} días`}</strong>`;
+            }
+        }
+
+        // Funcionalidad principal
+        document.addEventListener('DOMContentLoaded', function() {
+            // Generar servicios
+            generateServices();
+            
+            // Mostrar comentarios existentes
+            displayComments();
+            
+            // Actualizar carrito
+            updateCartDisplay();
+            
+            // Verificar promociones automáticamente
+            checkPromotions();
+
+            // Inicializar mapa cuando la pestaña de cita esté activa
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                        if (document.getElementById('cita').classList.contains('active')) {
+                            setTimeout(() => {
+                                if (!map) {
+                                    initMap();
+                                } else {
+                                    map.invalidateSize();
+                                }
+                            }, 100);
+                        }
+                    }
+                });
+            });
+
+            observer.observe(document.getElementById('cita'), {
+                attributes: true,
+                attributeFilter: ['class']
+            });
+
+            // Sistema de pestañas
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            function switchTab(tabId) {
+                tabButtons.forEach(button => button.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
+                
+                document.querySelector(`.tab-button[data-tab="${tabId}"]`).classList.add('active');
+                document.getElementById(tabId).classList.add('active');
+                
+                if (window.innerWidth <= 768) {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            }
+            
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    switchTab(tabId);
+                });
+            });
+
+            // Sistema de menú horizontal de servicios
+            const serviceMenuBtns = document.querySelectorAll('.service-menu-btn');
+            const serviceCategories = document.querySelectorAll('.services-category');
+            
+            serviceMenuBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const categoryId = this.getAttribute('data-category');
+                    
+                    serviceMenuBtns.forEach(b => b.classList.remove('active'));
+                    serviceCategories.forEach(cat => cat.classList.remove('active'));
+                    
+                    this.classList.add('active');
+                    document.getElementById(categoryId).classList.add('active');
+                });
+            });
+
+            // Botones que redirigen a agendar cita
+            document.querySelectorAll('.btn[data-tab="cita"]').forEach(element => {
+                element.addEventListener('click', function() {
+                    switchTab('cita');
+                });
+            });
+
+            // Mostrar/ocultar sección de domicilio
+            const domicilioRadio = document.getElementById('domicilio');
+            const onlineRadio = document.getElementById('online');
+            const domicilioSection = document.getElementById('domicilioSection');
+            
+            domicilioRadio.addEventListener('change', function() {
+                if (this.checked) {
+                    domicilioSection.classList.add('active');
+                    setTimeout(() => {
+                        if (!map) {
+                            initMap();
+                        } else {
+                            map.invalidateSize();
+                        }
+                    }, 300);
+                }
+            });
+            
+            onlineRadio.addEventListener('change', function() {
+                if (this.checked) {
+                    domicilioSection.classList.remove('active');
+                }
+            });
+
+            // Validación de fecha de cumpleaños
+            const birthdayInput = document.getElementById('birthday');
+            const birthdayWarning = document.getElementById('birthdayWarning');
+            
+            birthdayInput.addEventListener('change', function() {
+                if (!isValidBirthdayForPromotion(this.value)) {
+                    birthdayWarning.style.display = 'block';
+                } else {
+                    birthdayWarning.style.display = 'none';
+                }
+            });
+
+            // Manejo del formulario de comentarios
+            document.getElementById('commentForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const name = document.getElementById('commentName').value.trim();
+                const phone = document.getElementById('commentPhone').value.trim();
+                const text = document.getElementById('commentText').value.trim();
+                const isAnonymous = document.getElementById('isAnonymous').checked;
+                
+                if (!name || !phone || !text) {
+                    alert('Por favor completa todos los campos obligatorios');
+                    return;
+                }
+
+                const comment = {
+                    author: isAnonymous ? 'Anónimo' : name,
+                    text: text,
+                    isAnonymous: isAnonymous,
+                    date: new Date().toLocaleDateString('es-MX', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })
+                };
+
+                saveComment(comment);
+                
+                this.reset();
+                document.getElementById('isAnonymous').checked = false;
+                
+                showNotification('¡Gracias por tu comentario! 🌟');
+            });
+
+            // Manejo del formulario de citas
+            document.getElementById('appointmentForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                if (selectedServices.length === 0) {
+                    alert('Por favor agrega al menos un servicio antes de enviar la solicitud.');
+                    return;
+                }
+                
+                const name = document.getElementById('name').value;
+                const phone = document.getElementById('phone').value;
+                const email = document.getElementById('email').value;
+                const consultationType = document.querySelector('input[name="consultationType"]:checked').value;
+                const comments = document.getElementById('comments').value;
+                
+                // Validar lectura de cumpleaños
+                const hasBirthdayReading = selectedServices.some(service => service.id === 'cumpleanos');
+                if (hasBirthdayReading) {
+                    const birthday = document.getElementById('birthday').value;
+                    if (!isValidBirthdayForPromotion(birthday)) {
+                        alert('La lectura de cumpleaños solo está disponible 3 días antes o después de tu cumpleaños. Por favor verifica tu fecha.');
+                        return;
+                    }
+                }
+                
+                let direccion = 'Consulta en línea (WhatsApp)';
+                let coordenadas = 'No aplica';
+                
+                if (consultationType === 'domicilio') {
+                    if (!selectedLocation) {
+                        alert('Por favor selecciona una ubicación en el mapa.');
+                        return;
+                    }
+                    direccion = document.getElementById('direccionCompleta').value;
+                    const codigoPostal = document.getElementById('codigoPostal').value;
+                    coordenadas = `${selectedLocation.lat.toFixed(6)}, ${selectedLocation.lng.toFixed(6)}`;
+                    direccion += ` | C.P. ${codigoPostal} | Coordenadas: ${coordenadas}`;
+                }
+                
+                document.getElementById('loadingMessage').style.display = 'block';
+                document.getElementById('successMessage').style.display = 'none';
+                document.getElementById('errorMessage').style.display = 'none';
+                document.getElementById('submitButton').disabled = true;
+                
+                const servicesList = selectedServices.map(service => 
+                    `${service.name} x${service.quantity} - $${service.price * service.quantity}`
+                ).join('\n');
+                
+                const total = selectedServices.reduce((sum, service) => sum + (service.price * service.quantity), 0);
+                
+                const templateParams = {
+                    from_name: name,
+                    from_phone: phone,
+                    from_email: email,
+                    services: servicesList,
+                    total: total,
+                    consultation_type: consultationType === 'domicilio' ? 'A domicilio (+$50 adicional)' : 'En línea (WhatsApp)',
+                    direccion: direccion,
+                    coordenadas: coordenadas,
+                    comments: comments || 'No proporcionó comentarios adicionales',
+                    date: new Date().toLocaleString('es-MX')
+                };
+                
+                emailjs.send('service_z35hg3c', 'template_p8np16h', templateParams)
+                    .then(function(response) {
+                        document.getElementById('loadingMessage').style.display = 'none';
+                        document.getElementById('successMessage').style.display = 'block';
+                        document.getElementById('submitButton').disabled = false;
+                        
+                        setTimeout(() => {
+                            e.target.reset();
+                            document.getElementById('successMessage').style.display = 'none';
+                            domicilioSection.classList.remove('active');
+                            document.getElementById('birthdaySection').classList.remove('active');
+                            document.getElementById('locationInfo').style.display = 'none';
+                            selectedLocation = null;
+                            
+                            // Limpiar carrito después del envío exitoso
+                            selectedServices = [];
+                            saveCart();
+                            updateCartDisplay();
+                            generateServices();
+                        }, 5000);
+                        
+                    }, function(error) {
+                        document.getElementById('loadingMessage').style.display = 'none';
+                        document.getElementById('errorMessage').style.display = 'block';
+                        document.getElementById('submitButton').disabled = false;
+                    });
+            });
+        });
+
+        // Estilos CSS para las notificaciones
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+    
+    <!-- EmailJS SDK -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+        emailjs.init("D9IIhpZUFtIUOA0Rr");
+    </script>
+</body>
+</html>
