@@ -179,9 +179,6 @@
             padding: 1.5rem;
             background: var(--light-bg);
             border-radius: 10px;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
             border: 1px solid var(--border-color);
         }
         
@@ -1727,7 +1724,7 @@
 
     <script>
         // =============================================
-        // CONFIGURACIÓN GOOGLE SHEETS - SOLUCIÓN JSONP
+        // CONFIGURACIÓN GOOGLE SHEETS - SOLUCIÓN MEJORADA
         // =============================================
         const SHEET_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz0FfyZyxVbg8kFmJbprhNwlTYDNFVHpSj8CMpWL0yVRQ2HvOui_h4QoIhIW0wOaz8/exec';
 
@@ -1791,11 +1788,11 @@
         };
 
         // =============================================
-        // SISTEMA DE COMENTARIOS MEJORADO CON JSONP
+        // SISTEMA DE COMENTARIOS MEJORADO
         // =============================================
         let comments = [];
 
-        // Función para cargar comentarios usando JSONP
+        // Función para cargar comentarios
         function loadComments() {
             const commentsList = document.getElementById('commentsList');
             commentsList.innerHTML = '<div class="loading-comments">📡 Cargando comentarios...</div>';
@@ -1803,66 +1800,48 @@
             // Cargar desde localStorage primero (instantáneo)
             loadCommentsFromLocalStorage();
             
-            // Intentar cargar desde Google Sheets usando JSONP
-            loadCommentsFromGoogleSheetsJSONP();
+            // Intentar cargar desde Google Sheets
+            loadCommentsFromGoogleSheets();
         }
 
-        // Función para cargar comentarios usando JSONP - VERSIÓN CORREGIDA
-        function loadCommentsFromGoogleSheetsJSONP() {
-            const callbackName = 'handleCommentsResponse_' + Date.now();
-            window[callbackName] = function(data) {
-                delete window[callbackName];
-                if (script.parentNode) {
-                    document.head.removeChild(script);
-                }
-                
-                console.log('🔧 Respuesta de carga:', data);
-                
-                if (data && data.success && data.comments) {
-                    comments = data.comments;
-                    displayComments();
-                    localStorage.setItem('afrodyta_comments', JSON.stringify(comments));
-                    console.log('✅ Comentarios cargados desde Google Sheets:', data.comments.length, 'comentarios');
-                } else if (data && data.error) {
-                    console.log('❌ Error del servidor:', data.error);
-                }
-            };
+        // Función para cargar comentarios desde Google Sheets
+        function loadCommentsFromGoogleSheets() {
+            const params = new URLSearchParams();
+            params.append('action', 'getComments');
+            params.append('timestamp', Date.now());
             
-            const script = document.createElement('script');
-            const url = `${SHEET_SCRIPT_URL}?action=getComments&callback=${callbackName}&timestamp=${Date.now()}`;
-            console.log('🌐 Cargando desde:', url);
-            script.src = url;
-            
-            script.onerror = function() {
-                console.log('❌ Error cargando comentarios desde Google Sheets');
-                delete window[callbackName];
-                if (script.parentNode) {
-                    document.head.removeChild(script);
-                }
-            };
-            
-            document.head.appendChild(script);
-            
-            // Timeout
-            setTimeout(() => {
-                if (script.parentNode) {
-                    delete window[callbackName];
-                    document.head.removeChild(script);
-                    console.log('⏰ Timeout cargando comentarios');
-                }
-            }, 5000);
+            fetch(`${SHEET_SCRIPT_URL}?${params.toString()}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.success && data.comments) {
+                        comments = data.comments;
+                        displayComments();
+                        localStorage.setItem('afrodyta_comments', JSON.stringify(comments));
+                        console.log('✅ Comentarios cargados desde Google Sheets:', data.comments.length, 'comentarios');
+                    } else if (data && data.error) {
+                        console.log('❌ Error del servidor:', data.error);
+                    }
+                })
+                .catch(error => {
+                    console.log('⚠️ No se pudieron cargar comentarios desde Google Sheets, usando localStorage');
+                    console.error('Error:', error);
+                });
         }
 
         // Cargar comentarios desde localStorage
         function loadCommentsFromLocalStorage() {
-            const localComments = JSON.parse(localStorage.getItem('afrodyta_comments')) || [];
-            if (localComments.length > 0) {
-                comments = localComments;
-                displayComments();
+            try {
+                const localComments = JSON.parse(localStorage.getItem('afrodyta_comments')) || [];
+                if (localComments.length > 0) {
+                    comments = localComments;
+                    displayComments();
+                }
+            } catch (error) {
+                console.error('Error cargando comentarios locales:', error);
             }
         }
 
-        // Función para guardar comentario usando JSONP - VERSIÓN CORREGIDA
+        // Función para guardar comentario - VERSIÓN MEJORADA
         function saveComment(comment) {
             return new Promise((resolve) => {
                 // Primero guardar en localStorage
@@ -1873,26 +1852,7 @@
                     return;
                 }
                 
-                // Intentar guardar en Google Sheets usando JSONP
-                const callbackName = 'handleSaveCommentResponse_' + Date.now();
-                window[callbackName] = function(data) {
-                    delete window[callbackName];
-                    if (script.parentNode) {
-                        document.head.removeChild(script);
-                    }
-                    
-                    console.log('🔧 Respuesta de Google Sheets:', data);
-                    
-                    if (data && data.success) {
-                        console.log('✅ Comentario guardado en Google Sheets');
-                        resolve(true);
-                    } else {
-                        console.log('📝 Comentario guardado en localStorage (fallback)');
-                        resolve(true);
-                    }
-                };
-                
-                // Preparar URL para JSONP - FORMA CORRECTA
+                // Intentar guardar en Google Sheets
                 const params = new URLSearchParams();
                 params.append('action', 'addComment');
                 params.append('author', comment.author);
@@ -1902,34 +1862,28 @@
                 params.append('location', comment.location);
                 params.append('date', comment.date);
                 params.append('timestamp', comment.timestamp);
-                params.append('callback', callbackName);
                 
-                const script = document.createElement('script');
-                const url = `${SHEET_SCRIPT_URL}?${params.toString()}`;
-                console.log('🌐 Enviando a:', url);
-                script.src = url;
-                
-                script.onerror = function() {
-                    console.log('❌ Error de carga del script JSONP');
-                    delete window[callbackName];
-                    if (script.parentNode) {
-                        document.head.removeChild(script);
-                    }
-                    console.log('📝 Comentario guardado en localStorage (fallback JSONP)');
-                    resolve(true);
-                };
-                
-                document.head.appendChild(script);
-                
-                // Timeout más corto
-                setTimeout(() => {
-                    if (script.parentNode) {
-                        delete window[callbackName];
-                        document.head.removeChild(script);
-                        console.log('⏰ Comentario guardado en localStorage (timeout JSONP)');
+                fetch(SHEET_SCRIPT_URL, {
+                    method: 'POST',
+                    body: params
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.success) {
+                        console.log('✅ Comentario guardado en Google Sheets');
+                        // Recargar comentarios desde el servidor para tener los más actualizados
+                        loadCommentsFromGoogleSheets();
+                        resolve(true);
+                    } else {
+                        console.log('📝 Comentario guardado en localStorage (fallback servidor)');
                         resolve(true);
                     }
-                }, 3000);
+                })
+                .catch(error => {
+                    console.log('📝 Comentario guardado en localStorage (error de conexión)');
+                    console.error('Error:', error);
+                    resolve(true);
+                });
             });
         }
 
@@ -2801,3 +2755,4 @@
     </script>
 </body>
 </html>
+
