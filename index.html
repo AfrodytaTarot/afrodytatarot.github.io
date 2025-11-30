@@ -404,6 +404,13 @@
             font-family: "new-astro", sans-serif;
             font-size: clamp(1.1rem, 2.5vw, 1.3rem);
             color: #f8e9f0;
+            margin-bottom: 0.5rem;
+        }
+        
+        .service-price-usd {
+            font-family: "futura-pt", sans-serif;
+            font-size: 0.8rem;
+            color: var(--secondary-color);
             margin-bottom: 1rem;
         }
         
@@ -556,6 +563,28 @@
             border-left: 4px solid #ffd700;
         }
         
+        /* Botón especial para cumpleaños */
+        .birthday-promo-btn {
+            background: linear-gradient(135deg, #ff8ec7, #ffd700);
+            color: #2d0f1f;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 25px;
+            font-family: "carilliantine", serif;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 1rem auto;
+            display: block;
+            text-align: center;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+        }
+        
+        .birthday-promo-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.7);
+        }
+        
         /* Formulario de cita */
         .appointment-form {
             background: var(--light-bg);
@@ -678,6 +707,12 @@
             font-size: 0.9rem;
         }
         
+        .service-item-price-usd {
+            color: var(--secondary-color);
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+        
         .service-item-actions {
             display: flex;
             align-items: center;
@@ -718,6 +753,14 @@
             font-family: "carilliantine", serif;
             font-size: 1.2rem;
             color: var(--primary-color);
+        }
+        
+        .cart-total-usd {
+            text-align: right;
+            margin-top: 0.5rem;
+            font-family: "futura-pt", sans-serif;
+            font-size: 1rem;
+            color: var(--secondary-color);
         }
         
         /* NUEVOS ESTILOS PARA MOSTRAR DESCUENTOS */
@@ -766,6 +809,14 @@
             border-top: 2px solid #ffd700;
             font-family: "carilliantine", serif;
             font-size: 1.3rem;
+            color: #ffd700;
+        }
+        
+        .final-total-usd {
+            text-align: right;
+            margin-top: 0.5rem;
+            font-family: "futura-pt", sans-serif;
+            font-size: 1.1rem;
             color: #ffd700;
         }
         
@@ -1351,10 +1402,15 @@
                 <div class="promotions-section">
                     <h3 class="section-title">🎁 PROMOCIONES Y DESCUENTOS</h3>
                     
+                    <!-- Botón especial para cumpleaños -->
+                    <button class="birthday-promo-btn" id="birthdayPromoBtn">
+                        🎂 ¡ES MI CUMPLEAÑOS! - LECTURA GRATIS
+                    </button>
+                    
                     <div class="promotion-card promotion-active" id="promo3x2">
                         <h4>3x2 <span class="promotion-badge">ACTIVA</span></h4>
                         <div class="promotion-description">
-                            Pide 3 lecturas arriba de $250 y llévate una lectura gratis (valor máximo $180). 
+                            Pide 3 lecturas arriba de $250 MXN y llévate una lectura gratis (valor máximo $180 MXN). 
                             <strong>Promoción permanente.</strong>
                         </div>
                     </div>
@@ -1362,7 +1418,7 @@
                     <div class="promotion-card promotion-active">
                         <h4>Lectura Gratis <span class="promotion-badge">ACTIVA</span></h4>
                         <div class="promotion-description">
-                            En compras superiores a $500, recibe una lectura adicional gratis.
+                            En compras superiores a $500 MXN, recibe una lectura adicional gratis.
                             <strong>Promoción permanente.</strong>
                         </div>
                     </div>
@@ -1418,7 +1474,7 @@
                     <div class="promotion-card promotion-active">
                         <h4>Te Recomendé <span class="promotion-badge">ACTIVA</span></h4>
                         <div class="promotion-description">
-                            Trae un nuevo cliente y recibe 15% de descuento en tu próxima compra (mínimo $150).
+                            Trae un nuevo cliente y recibe 15% de descuento en tu próxima compra (mínimo $150 MXN).
                             <strong>Programa de referidos permanente.</strong>
                         </div>
                     </div>
@@ -1451,17 +1507,23 @@
                         <div class="discounts-title">🎉 Descuentos Aplicados</div>
                         <div id="discountsList"></div>
                         <div class="final-total">
-                            Total Final: $<span id="finalTotalAmount">0</span>
+                            Total Final: $<span id="finalTotalAmount">0</span> MXN
+                        </div>
+                        <div class="final-total-usd" id="finalTotalUSD">
+                            Total Final: $<span id="finalTotalAmountUSD">0</span> USD
                         </div>
                     </div>
                     
                     <div class="cart-total" id="cartTotal" style="display: none;">
-                        Subtotal: $<span id="totalAmount">0</span>
+                        Subtotal: $<span id="totalAmount">0</span> MXN
+                    </div>
+                    <div class="cart-total-usd" id="cartTotalUSD" style="display: none;">
+                        Subtotal: $<span id="totalAmountUSD">0</span> USD
                     </div>
                 </div>
                 
                 <div class="location-note">
-                    <strong>✨ Importante:</strong> Las consultas a domicilio solo están disponibles en Ciudad Madero - Tampico, Tamaulipas. Servicio con costo adicional de $50 pesos.
+                    <strong>✨ Importante:</strong> Las consultas a domicilio solo están disponibles en Ciudad Madero - Tampico, Tamaulipas. Servicio con costo adicional de $50 MXN.
                 </div>
                 
                 <form id="appointmentForm">
@@ -1503,7 +1565,7 @@
                         <div class="radio-group">
                             <div class="radio-option">
                                 <input type="radio" id="domicilio" name="consultationType" value="domicilio">
-                                <label for="domicilio">A domicilio (+$50 adicional)</label>
+                                <label for="domicilio">A domicilio (+$50 MXN adicional)</label>
                             </div>
                             <div class="radio-option">
                                 <input type="radio" id="online" name="consultationType" value="online" checked>
@@ -1659,6 +1721,26 @@
         const SHEET_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz0FfyZyxVbg8kFmJbprhNwlTYDNFVHpSj8CMpWL0yVRQ2HvOui_h4QoIhIW0wOaz8/exec';
 
         // =============================================
+        // TIPO DE CAMBIO MXN A USD
+        // =============================================
+        const EXCHANGE_RATE = 19; // 1 MXN = 19 USD
+
+        // =============================================
+        // FUNCIONES DE CONVERSIÓN
+        // =============================================
+        function mxnToUsd(mxnAmount) {
+            return (mxnAmount / EXCHANGE_RATE).toFixed(2);
+        }
+
+        function formatCurrencyMXN(amount) {
+            return `$${amount} MXN`;
+        }
+
+        function formatCurrencyUSD(amount) {
+            return `$${amount} USD`;
+        }
+
+        // =============================================
         // DATOS DE SERVICIOS
         // =============================================
         const servicesData = {
@@ -1698,41 +1780,39 @@
         };
 
         // =============================================
-        // SISTEMA DE COMENTARIOS MEJORADO CON JSONP
+        // SISTEMA DE COMENTARIOS MEJORADO
         // =============================================
         let comments = [];
 
-        // Función para cargar comentarios usando JSONP
+        // Función para cargar comentarios
         function loadComments() {
             const commentsList = document.getElementById('commentsList');
             commentsList.innerHTML = '<div class="loading-comments">📡 Cargando comentarios...</div>';
             
-            // Primero cargar desde localStorage (instantáneo)
+            // Cargar desde localStorage primero
             loadCommentsFromLocalStorage();
             
-            // Luego intentar cargar desde Google Sheets usando JSONP
-            const script = document.createElement('script');
-            script.src = `${SHEET_SCRIPT_URL}?action=getComments&callback=handleCommentsResponse&timestamp=${Date.now()}`;
-            document.head.appendChild(script);
-            
-            // Timeout por si falla JSONP
-            setTimeout(() => {
-                if (document.head.contains(script)) {
-                    document.head.removeChild(script);
-                    console.log('JSONP timeout, usando localStorage');
-                }
-            }, 5000);
+            // Intentar cargar desde Google Sheets
+            loadCommentsFromGoogleSheets();
         }
 
-        // Función callback para JSONP
-        function handleCommentsResponse(data) {
-            if (data && data.success) {
-                comments = data.comments || [];
-                displayComments();
-                // Guardar en localStorage para futuras cargas rápidas
-                localStorage.setItem('afrodyta_comments', JSON.stringify(comments));
-                showNotification('✅ Comentarios actualizados');
-            }
+        // Función para cargar desde Google Sheets
+        function loadCommentsFromGoogleSheets() {
+            const url = `${SHEET_SCRIPT_URL}?action=getComments&timestamp=${Date.now()}`;
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.success && data.comments) {
+                        comments = data.comments;
+                        displayComments();
+                        localStorage.setItem('afrodyta_comments', JSON.stringify(comments));
+                        console.log('✅ Comentarios cargados desde Google Sheets');
+                    }
+                })
+                .catch(error => {
+                    console.log('⚠️ No se pudieron cargar comentarios desde Google Sheets, usando localStorage:', error);
+                });
         }
 
         // Cargar comentarios desde localStorage
@@ -1744,60 +1824,55 @@
             }
         }
 
-        // Función para guardar comentario (usando formulario HTML)
+        // Función para guardar comentario
         async function saveComment(comment) {
             try {
-                // Crear un formulario temporal para enviar los datos
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = SHEET_SCRIPT_URL;
-                form.style.display = 'none';
-                
-                // Agregar campos al formulario
-                const fields = {
-                    'action': 'addComment',
-                    'author': comment.author,
-                    'text': comment.text,
-                    'phone': comment.phone,
-                    'isAnonymous': comment.isAnonymous,
-                    'location': comment.location,
-                    'date': comment.date,
-                    'timestamp': comment.timestamp
+                // Preparar datos para Google Apps Script
+                const payload = {
+                    action: 'addComment',
+                    author: comment.author,
+                    text: comment.text,
+                    phone: comment.phone,
+                    isAnonymous: comment.isAnonymous ? 'true' : 'false',
+                    location: comment.location,
+                    date: comment.date,
+                    timestamp: comment.timestamp
                 };
-                
-                Object.keys(fields).forEach(key => {
-                    const input = document.createElement('input');
-                    input.name = key;
-                    input.value = fields[key];
-                    form.appendChild(input);
+
+                // Enviar a Google Sheets
+                const formData = new URLSearchParams();
+                Object.keys(payload).forEach(key => {
+                    formData.append(key, payload[key]);
                 });
-                
-                // Agregar formulario al DOM y enviar
-                document.body.appendChild(form);
-                
-                // Usar fetch con método POST simple
-                const formData = new FormData();
-                Object.keys(fields).forEach(key => {
-                    formData.append(key, fields[key]);
-                });
-                
+
                 const response = await fetch(SHEET_SCRIPT_URL, {
                     method: 'POST',
                     body: formData,
-                    mode: 'no-cors' // No-cors para evitar problemas CORS
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
                 });
+
+                const result = await response.json();
                 
-                // Limpiar formulario
-                document.body.removeChild(form);
-                
-                // Como no podemos leer la respuesta en modo no-cors, asumimos éxito
-                // y guardamos en localStorage
-                saveCommentToLocalStorage(comment);
-                return true;
+                if (result.success) {
+                    // Guardar también en localStorage
+                    saveCommentToLocalStorage(comment);
+                    console.log('✅ Comentario guardado en Google Sheets y localStorage');
+                    return true;
+                } else {
+                    throw new Error(result.error || 'Error desconocido');
+                }
                 
             } catch (error) {
-                console.log('Guardando en localStorage:', error.message);
-                return saveCommentToLocalStorage(comment);
+                console.error('❌ Error guardando en Google Sheets:', error);
+                // Fallback: guardar solo en localStorage
+                const localSuccess = saveCommentToLocalStorage(comment);
+                if (localSuccess) {
+                    console.log('✅ Comentario guardado en localStorage (fallback)');
+                    return true;
+                }
+                return false;
             }
         }
 
@@ -2007,7 +2082,7 @@
                 const freeReading = Math.min(180, total * 0.2);
                 finalTotal -= freeReading;
                 discounts.push({
-                    description: '🎁 Lectura gratis en compras mayores a $500',
+                    description: '🎁 Lectura gratis en compras mayores a $500 MXN',
                     amount: freeReading
                 });
             }
@@ -2023,16 +2098,18 @@
             const discountsSection = document.getElementById('discountsSection');
             const discountsList = document.getElementById('discountsList');
             const finalTotalAmount = document.getElementById('finalTotalAmount');
+            const finalTotalAmountUSD = document.getElementById('finalTotalAmountUSD');
             
             if (discounts.length > 0) {
                 discountsSection.classList.add('active');
                 discountsList.innerHTML = discounts.map(discount => `
                     <div class="discount-item">
                         <span class="discount-description">${discount.description}</span>
-                        <span class="discount-amount">-$${discount.amount}</span>
+                        <span class="discount-amount">-$${discount.amount} MXN</span>
                     </div>
                 `).join('');
                 finalTotalAmount.textContent = finalTotal;
+                finalTotalAmountUSD.textContent = mxnToUsd(finalTotal);
             } else {
                 discountsSection.classList.remove('active');
             }
@@ -2043,12 +2120,15 @@
             const servicesList = document.getElementById('servicesList');
             const emptyCart = document.getElementById('emptyCart');
             const cartTotal = document.getElementById('cartTotal');
+            const cartTotalUSD = document.getElementById('cartTotalUSD');
             const totalAmount = document.getElementById('totalAmount');
+            const totalAmountUSD = document.getElementById('totalAmountUSD');
             
             if (selectedServices.length === 0) {
                 emptyCart.style.display = 'block';
                 servicesList.innerHTML = '';
                 cartTotal.style.display = 'none';
+                cartTotalUSD.style.display = 'none';
                 document.getElementById('discountsSection').classList.remove('active');
                 return;
             }
@@ -2070,7 +2150,8 @@
                     <div class="selected-service-item">
                         <div class="service-item-info">
                             <div class="service-item-name">${service.name}</div>
-                            <div class="service-item-price">$${service.price} x ${service.quantity} = $${serviceTotal}</div>
+                            <div class="service-item-price">$${service.price} MXN x ${service.quantity} = $${serviceTotal} MXN</div>
+                            <div class="service-item-price-usd">$${mxnToUsd(service.price)} USD x ${service.quantity} = $${mxnToUsd(serviceTotal)} USD</div>
                         </div>
                         <div class="service-item-actions">
                             <div class="quantity-controls active">
@@ -2085,7 +2166,9 @@
             }).join('');
             
             totalAmount.textContent = subtotal;
+            totalAmountUSD.textContent = mxnToUsd(subtotal);
             cartTotal.style.display = 'block';
+            cartTotalUSD.style.display = 'block';
             
             // APLICAR PROMOCIONES
             const finalTotal = applyPromotions(subtotal);
@@ -2110,7 +2193,8 @@
                             <div class="service-card" style="position: relative;">
                                 ${hasQuantity ? `<div class="service-quantity-indicator">${quantity}</div>` : ''}
                                 <h3>${service.name}</h3>
-                                <div class="service-price">${service.price === 0 ? 'GRATIS' : `$${service.price}`}</div>
+                                <div class="service-price">${service.price === 0 ? 'GRATIS' : `$${service.price} MXN`}</div>
+                                ${service.price > 0 ? `<div class="service-price-usd">$${mxnToUsd(service.price)} USD</div>` : ''}
                                 <div class="service-description">
                                     ${service.description}
                                 </div>
@@ -2184,7 +2268,7 @@
             // Generar servicios
             updateServicesDisplay();
             
-            // Cargar comentarios usando JSONP
+            // Cargar comentarios
             loadComments();
             
             // Actualizar carrito
@@ -2238,6 +2322,19 @@
                     this.classList.add('active');
                     document.getElementById(categoryId).classList.add('active');
                 });
+            });
+
+            // Botón especial para cumpleaños
+            document.getElementById('birthdayPromoBtn').addEventListener('click', function() {
+                const birthdayService = {
+                    id: 'cumpleanos',
+                    name: 'Lectura de Cumpleaños',
+                    price: 0,
+                    description: 'Lectura especial de cumpleaños gratis (válida 3 días antes/después)'
+                };
+                
+                addToCart(birthdayService);
+                switchTab('cita');
             });
 
             // Botones que redirigen a agendar cita
@@ -2300,7 +2397,8 @@
                 }
 
                 // Validar teléfono
-                if (!/^\d{10}$/.test(phone.replace(/\D/g, ''))) {
+                const cleanPhone = phone.replace(/\D/g, '');
+                if (cleanPhone.length !== 10) {
                     alert('Por favor ingresa un número de teléfono válido (10 dígitos)');
                     return;
                 }
@@ -2315,12 +2413,12 @@
                     // Obtener ubicación
                     const location = await getLocation();
                     
-                    const firstName = name.split(' ')[0];
+                    const firstName = isAnonymous ? 'Anónimo' : name.split(' ')[0];
 
                     const comment = {
-                        author: isAnonymous ? 'Anónimo' : firstName,
+                        author: firstName,
                         text: text,
-                        phone: phone.substring(0, 3) + '*****' + phone.substring(8), // Solo mostrar parcialmente
+                        phone: cleanPhone.substring(0, 3) + '*****' + cleanPhone.substring(8),
                         isAnonymous: isAnonymous,
                         location: location,
                         date: new Date().toLocaleDateString('es-MX', {
@@ -2333,7 +2431,7 @@
                         timestamp: new Date().toISOString()
                     };
 
-                    // Intentar guardar en Google Sheets
+                    // Intentar guardar el comentario
                     const saved = await saveComment(comment);
                     
                     if (saved) {
@@ -2415,10 +2513,11 @@
                 const finalTotal = applyPromotions(subtotal);
                 
                 selectedServices.forEach(service => {
-                    packageInfo += `• ${service.name} x${service.quantity} - $${service.price * service.quantity}\n`;
+                    packageInfo += `• ${service.name} x${service.quantity} - $${service.price * service.quantity} MXN\n`;
                 });
                 
-                packageInfo += `\nSUBTOTAL: $${subtotal}`;
+                packageInfo += `\nSUBTOTAL: $${subtotal} MXN`;
+                packageInfo += `\nSUBTOTAL: $${mxnToUsd(subtotal)} USD`;
                 
                 // Agregar información de descuentos
                 const discountsSection = document.getElementById('discountsSection');
@@ -2429,9 +2528,11 @@
                         const amount = item.querySelector('.discount-amount').textContent;
                         packageInfo += `\n${desc}: ${amount}`;
                     });
-                    packageInfo += `\nTOTAL FINAL: $${finalTotal}`;
+                    packageInfo += `\nTOTAL FINAL: $${finalTotal} MXN`;
+                    packageInfo += `\nTOTAL FINAL: $${mxnToUsd(finalTotal)} USD`;
                 } else {
-                    packageInfo += `\nTOTAL: $${finalTotal}`;
+                    packageInfo += `\nTOTAL: $${finalTotal} MXN`;
+                    packageInfo += `\nTOTAL: $${mxnToUsd(finalTotal)} USD`;
                 }
                 
                 // Preparar información de ubicación
@@ -2457,8 +2558,9 @@
                     coordenadas = `${selectedLocation.lat.toFixed(6)}, ${selectedLocation.lng.toFixed(6)}`;
                     totalConDomicilio = finalTotal + 50;
                     
-                    packageInfo += `\n\n💫 SERVICIO A DOMICILIO: +$50`;
-                    packageInfo += `\nTOTAL CON DOMICILIO: $${totalConDomicilio}`;
+                    packageInfo += `\n\n💫 SERVICIO A DOMICILIO: +$50 MXN`;
+                    packageInfo += `\nTOTAL CON DOMICILIO: $${totalConDomicilio} MXN`;
+                    packageInfo += `\nTOTAL CON DOMICILIO: $${mxnToUsd(totalConDomicilio)} USD`;
                 }
                 
                 console.log('Preparando envío de email...');
@@ -2475,12 +2577,13 @@
                     from_phone: phone,
                     from_email: email,
                     package: packageInfo,
-                    consultation_type: consultationTypeValue === 'domicilio' ? 'A domicilio (+$50 adicional)' : 'En línea (WhatsApp)',
+                    consultation_type: consultationTypeValue === 'domicilio' ? 'A domicilio (+$50 MXN adicional)' : 'En línea (WhatsApp)',
                     direccion: direccion,
                     coordenadas: coordenadas,
                     comments: comments || 'No proporcionó comentarios adicionales',
                     date: new Date().toLocaleString('es-MX'),
-                    total: consultationTypeValue === 'domicilio' ? totalConDomicilio : finalTotal
+                    total: consultationTypeValue === 'domicilio' ? totalConDomicilio : finalTotal,
+                    total_usd: consultationTypeValue === 'domicilio' ? mxnToUsd(totalConDomicilio) : mxnToUsd(finalTotal)
                 };
                 
                 console.log('Enviando correo con parámetros:', templateParams);
