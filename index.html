@@ -585,6 +585,17 @@
             box-shadow: 0 0 20px rgba(255, 215, 0, 0.7);
         }
         
+        .birthday-promo-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .birthday-promo-btn:disabled:hover {
+            transform: none !important;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5) !important;
+        }
+        
         /* Formulario de cita */
         .appointment-form {
             background: var(--light-bg);
@@ -1780,39 +1791,57 @@
         };
 
         // =============================================
-        // SISTEMA DE COMENTARIOS MEJORADO
+        // SISTEMA DE COMENTARIOS MEJORADO CON JSONP
         // =============================================
         let comments = [];
 
-        // Función para cargar comentarios
+        // Función para cargar comentarios usando JSONP
         function loadComments() {
             const commentsList = document.getElementById('commentsList');
             commentsList.innerHTML = '<div class="loading-comments">📡 Cargando comentarios...</div>';
             
-            // Cargar desde localStorage primero
+            // Cargar desde localStorage primero (instantáneo)
             loadCommentsFromLocalStorage();
             
-            // Intentar cargar desde Google Sheets
-            loadCommentsFromGoogleSheets();
+            // Intentar cargar desde Google Sheets usando JSONP
+            loadCommentsFromGoogleSheetsJSONP();
         }
 
-        // Función para cargar desde Google Sheets
-        function loadCommentsFromGoogleSheets() {
-            const url = `${SHEET_SCRIPT_URL}?action=getComments&timestamp=${Date.now()}`;
+        // Función para cargar comentarios usando JSONP (solución CORS)
+        function loadCommentsFromGoogleSheetsJSONP() {
+            // Crear un script para JSONP
+            const callbackName = 'handleCommentsResponse_' + Date.now();
+            window[callbackName] = function(data) {
+                // Limpiar el callback
+                delete window[callbackName];
+                document.head.removeChild(script);
+                
+                if (data && data.success && data.comments) {
+                    comments = data.comments;
+                    displayComments();
+                    localStorage.setItem('afrodyta_comments', JSON.stringify(comments));
+                    console.log('✅ Comentarios cargados desde Google Sheets');
+                }
+            };
             
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if (data && data.success && data.comments) {
-                        comments = data.comments;
-                        displayComments();
-                        localStorage.setItem('afrodyta_comments', JSON.stringify(comments));
-                        console.log('✅ Comentarios cargados desde Google Sheets');
-                    }
-                })
-                .catch(error => {
-                    console.log('⚠️ No se pudieron cargar comentarios desde Google Sheets, usando localStorage:', error);
-                });
+            const script = document.createElement('script');
+            script.src = `${SHEET_SCRIPT_URL}?action=getComments&callback=${callbackName}&timestamp=${Date.now()}`;
+            script.onerror = function() {
+                console.log('⚠️ No se pudieron cargar comentarios desde Google Sheets, usando localStorage');
+                delete window[callbackName];
+                document.head.removeChild(script);
+            };
+            
+            document.head.appendChild(script);
+            
+            // Timeout por si falla
+            setTimeout(() => {
+                if (document.head.contains(script)) {
+                    console.log('⚠️ Timeout cargando comentarios, usando localStorage');
+                    delete window[callbackName];
+                    document.head.removeChild(script);
+                }
+            }, 8000);
         }
 
         // Cargar comentarios desde localStorage
@@ -1824,56 +1853,65 @@
             }
         }
 
-        // Función para guardar comentario
-        async function saveComment(comment) {
-            try {
-                // Preparar datos para Google Apps Script
-                const payload = {
-                    action: 'addComment',
-                    author: comment.author,
-                    text: comment.text,
-                    phone: comment.phone,
-                    isAnonymous: comment.isAnonymous ? 'true' : 'false',
-                    location: comment.location,
-                    date: comment.date,
-                    timestamp: comment.timestamp
-                };
-
-                // Enviar a Google Sheets
-                const formData = new URLSearchParams();
-                Object.keys(payload).forEach(key => {
-                    formData.append(key, payload[key]);
-                });
-
-                const response = await fetch(SHEET_SCRIPT_URL, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                });
-
-                const result = await response.json();
-                
-                if (result.success) {
-                    // Guardar también en localStorage
-                    saveCommentToLocalStorage(comment);
-                    console.log('✅ Comentario guardado en Google Sheets y localStorage');
-                    return true;
-                } else {
-                    throw new Error(result.error || 'Error desconocido');
-                }
-                
-            } catch (error) {
-                console.error('❌ Error guardando en Google Sheets:', error);
-                // Fallback: guardar solo en localStorage
+        // Función para guardar comentario usando JSONP
+        function saveComment(comment) {
+            return new Promise((resolve) => {
+                // Primero guardar en localStorage
                 const localSuccess = saveCommentToLocalStorage(comment);
-                if (localSuccess) {
-                    console.log('✅ Comentario guardado en localStorage (fallback)');
-                    return true;
+                
+                if (!localSuccess) {
+                    resolve(false);
+                    return;
                 }
-                return false;
-            }
+                
+                // Intentar guardar en Google Sheets usando JSONP
+                const callbackName = 'handleSaveCommentResponse_' + Date.now();
+                window[callbackName] = function(data) {
+                    delete window[callbackName];
+                    document.head.removeChild(script);
+                    
+                    if (data && data.success) {
+                        console.log('✅ Comentario guardado en Google Sheets');
+                        resolve(true);
+                    } else {
+                        console.log('✅ Comentario guardado en localStorage (fallback)');
+                        resolve(true);
+                    }
+                };
+                
+                // Preparar datos para JSONP
+                const params = new URLSearchParams();
+                params.append('action', 'addComment');
+                params.append('author', comment.author);
+                params.append('text', comment.text);
+                params.append('phone', comment.phone);
+                params.append('isAnonymous', comment.isAnonymous ? 'true' : 'false');
+                params.append('location', comment.location);
+                params.append('date', comment.date);
+                params.append('timestamp', comment.timestamp);
+                params.append('callback', callbackName);
+                
+                const script = document.createElement('script');
+                script.src = `${SHEET_SCRIPT_URL}?${params.toString()}`;
+                script.onerror = function() {
+                    delete window[callbackName];
+                    document.head.removeChild(script);
+                    console.log('✅ Comentario guardado en localStorage (fallback JSONP)');
+                    resolve(true);
+                };
+                
+                document.head.appendChild(script);
+                
+                // Timeout
+                setTimeout(() => {
+                    if (document.head.contains(script)) {
+                        delete window[callbackName];
+                        document.head.removeChild(script);
+                        console.log('✅ Comentario guardado en localStorage (timeout JSONP)');
+                        resolve(true);
+                    }
+                }, 5000);
+            });
         }
 
         // Guardar comentario en localStorage
@@ -1912,6 +1950,52 @@
                     <div class="comment-text">${comment.text}</div>
                 </div>
             `).join('');
+        }
+
+        // =============================================
+        // SISTEMA DE CONTROL DE LECTURA DE CUMPLEAÑOS
+        // =============================================
+        
+        // Verificar si ya se reclamó la lectura de cumpleaños
+        function hasClaimedBirthdayReading() {
+            const claimed = localStorage.getItem('afrodyta_birthday_claimed');
+            if (!claimed) return false;
+            
+            const claimDate = new Date(claimed);
+            const today = new Date();
+            
+            // Verificar si la reclamación fue hace menos de 1 año
+            const oneYearAgo = new Date();
+            oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+            
+            return claimDate > oneYearAgo;
+        }
+
+        // Marcar lectura de cumpleaños como reclamada
+        function markBirthdayAsClaimed() {
+            localStorage.setItem('afrodyta_birthday_claimed', new Date().toISOString());
+            updateBirthdayButtonState();
+        }
+
+        // Actualizar estado del botón de cumpleaños
+        function updateBirthdayButtonState() {
+            const birthdayBtn = document.getElementById('birthdayPromoBtn');
+            const hasClaimed = hasClaimedBirthdayReading();
+            
+            if (hasClaimed) {
+                birthdayBtn.disabled = true;
+                birthdayBtn.textContent = '🎂 YA RECLAMASTE TU LECTURA DE CUMPLEAÑOS';
+                birthdayBtn.title = 'Solo puedes reclamar una lectura de cumpleaños por año';
+            } else {
+                birthdayBtn.disabled = false;
+                birthdayBtn.textContent = '🎂 ¡ES MI CUMPLEAÑOS! - LECTURA GRATIS';
+                birthdayBtn.title = 'Haz clic para reclamar tu lectura de cumpleaños gratis';
+            }
+        }
+
+        // Verificar si ya hay una lectura de cumpleaños en el carrito
+        function hasBirthdayInCart() {
+            return selectedServices.some(service => service.id === 'cumpleanos');
         }
 
         // Función para obtener ubicación
@@ -2014,6 +2098,22 @@
 
         // Sistema de carrito
         function addToCart(service) {
+            // Verificar si es lectura de cumpleaños y ya está reclamada
+            if (service.id === 'cumpleanos') {
+                if (hasClaimedBirthdayReading()) {
+                    showNotification('❌ Ya reclamaste tu lectura de cumpleaños este año');
+                    return;
+                }
+                
+                if (hasBirthdayInCart()) {
+                    showNotification('⚠️ Ya tienes una lectura de cumpleaños en el carrito');
+                    return;
+                }
+                
+                // Marcar como reclamada
+                markBirthdayAsClaimed();
+            }
+            
             const existingService = selectedServices.find(item => item.id === service.id);
             
             if (existingService) {
@@ -2033,6 +2133,14 @@
         }
 
         function removeFromCart(serviceId) {
+            const service = selectedServices.find(item => item.id === serviceId);
+            
+            // Si es lectura de cumpleaños, permitir remover sin afectar el límite anual
+            if (serviceId === 'cumpleanos') {
+                // No removemos la marca de reclamación para evitar abusos
+                // El usuario podrá agregarla nuevamente si la remueve
+            }
+            
             selectedServices = selectedServices.filter(item => item.id !== serviceId);
             saveCart();
             updateCartDisplay();
@@ -2042,6 +2150,12 @@
         function updateQuantity(serviceId, change) {
             const service = selectedServices.find(item => item.id === serviceId);
             if (service) {
+                // Para lectura de cumpleaños, no permitir más de 1
+                if (service.id === 'cumpleanos' && service.quantity + change > 1) {
+                    showNotification('❌ Solo puedes tener una lectura de cumpleaños');
+                    return;
+                }
+                
                 service.quantity += change;
                 if (service.quantity <= 0) {
                     removeFromCart(serviceId);
@@ -2151,7 +2265,7 @@
                         <div class="service-item-info">
                             <div class="service-item-name">${service.name}</div>
                             <div class="service-item-price">$${service.price} MXN x ${service.quantity} = $${serviceTotal} MXN</div>
-                            <div class="service-item-price-usd">$${mxnToUsd(service.price)} USD x ${service.quantity} = $${mxnToUsd(serviceTotal)} USD</div>
+                            ${service.price > 0 ? `<div class="service-item-price-usd">$${mxnToUsd(service.price)} USD x ${service.quantity} = $${mxnToUsd(serviceTotal)} USD</div>` : ''}
                         </div>
                         <div class="service-item-actions">
                             <div class="quantity-controls active">
@@ -2189,6 +2303,9 @@
                         const quantity = getServiceQuantity(service.id);
                         const hasQuantity = quantity > 0;
                         
+                        // Para lectura de cumpleaños, verificar si ya fue reclamada
+                        const isBirthdayClaimed = service.id === 'cumpleanos' && hasClaimedBirthdayReading() && !hasQuantity;
+                        
                         return `
                             <div class="service-card" style="position: relative;">
                                 ${hasQuantity ? `<div class="service-quantity-indicator">${quantity}</div>` : ''}
@@ -2197,6 +2314,7 @@
                                 ${service.price > 0 ? `<div class="service-price-usd">$${mxnToUsd(service.price)} USD</div>` : ''}
                                 <div class="service-description">
                                     ${service.description}
+                                    ${isBirthdayClaimed ? '<br><small style="color: #ff6b6b;">⚠️ Ya reclamaste esta promoción este año</small>' : ''}
                                 </div>
                                 <div class="service-actions">
                                     <div class="quantity-controls ${hasQuantity ? 'active' : ''}">
@@ -2204,8 +2322,10 @@
                                         <span class="quantity-display">${quantity}</span>
                                         <button class="quantity-btn" onclick="updateQuantity('${service.id}', 1)">+</button>
                                     </div>
-                                    <button class="add-to-cart-btn" onclick="addToCart(${JSON.stringify(service).replace(/"/g, '&quot;')})">
-                                        ${hasQuantity ? 'Actualizar' : 'Agregar'}
+                                    <button class="add-to-cart-btn" 
+                                        onclick="addToCart(${JSON.stringify(service).replace(/"/g, '&quot;')})"
+                                        ${isBirthdayClaimed ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>
+                                        ${isBirthdayClaimed ? 'Ya Reclamado' : (hasQuantity ? 'Actualizar' : 'Agregar')}
                                     </button>
                                 </div>
                             </div>
@@ -2265,6 +2385,9 @@
 
         // Funcionalidad principal
         document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar estado del botón de cumpleaños
+            updateBirthdayButtonState();
+            
             // Generar servicios
             updateServicesDisplay();
             
@@ -2326,6 +2449,11 @@
 
             // Botón especial para cumpleaños
             document.getElementById('birthdayPromoBtn').addEventListener('click', function() {
+                if (this.disabled) {
+                    showNotification('❌ Ya reclamaste tu lectura de cumpleaños este año');
+                    return;
+                }
+                
                 const birthdayService = {
                     id: 'cumpleanos',
                     name: 'Lectura de Cumpleaños',
