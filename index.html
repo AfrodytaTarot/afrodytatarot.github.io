@@ -1807,41 +1807,50 @@
             loadCommentsFromGoogleSheetsJSONP();
         }
 
-        // Función para cargar comentarios usando JSONP (solución CORS)
+        // Función para cargar comentarios usando JSONP - VERSIÓN CORREGIDA
         function loadCommentsFromGoogleSheetsJSONP() {
-            // Crear un script para JSONP
             const callbackName = 'handleCommentsResponse_' + Date.now();
             window[callbackName] = function(data) {
-                // Limpiar el callback
                 delete window[callbackName];
-                document.head.removeChild(script);
+                if (script.parentNode) {
+                    document.head.removeChild(script);
+                }
+                
+                console.log('🔧 Respuesta de carga:', data);
                 
                 if (data && data.success && data.comments) {
                     comments = data.comments;
                     displayComments();
                     localStorage.setItem('afrodyta_comments', JSON.stringify(comments));
-                    console.log('✅ Comentarios cargados desde Google Sheets');
+                    console.log('✅ Comentarios cargados desde Google Sheets:', data.comments.length, 'comentarios');
+                } else if (data && data.error) {
+                    console.log('❌ Error del servidor:', data.error);
                 }
             };
             
             const script = document.createElement('script');
-            script.src = `${SHEET_SCRIPT_URL}?action=getComments&callback=${callbackName}&timestamp=${Date.now()}`;
+            const url = `${SHEET_SCRIPT_URL}?action=getComments&callback=${callbackName}&timestamp=${Date.now()}`;
+            console.log('🌐 Cargando desde:', url);
+            script.src = url;
+            
             script.onerror = function() {
-                console.log('⚠️ No se pudieron cargar comentarios desde Google Sheets, usando localStorage');
+                console.log('❌ Error cargando comentarios desde Google Sheets');
                 delete window[callbackName];
-                document.head.removeChild(script);
+                if (script.parentNode) {
+                    document.head.removeChild(script);
+                }
             };
             
             document.head.appendChild(script);
             
-            // Timeout por si falla
+            // Timeout
             setTimeout(() => {
-                if (document.head.contains(script)) {
-                    console.log('⚠️ Timeout cargando comentarios, usando localStorage');
+                if (script.parentNode) {
                     delete window[callbackName];
                     document.head.removeChild(script);
+                    console.log('⏰ Timeout cargando comentarios');
                 }
-            }, 8000);
+            }, 5000);
         }
 
         // Cargar comentarios desde localStorage
@@ -1853,7 +1862,7 @@
             }
         }
 
-        // Función para guardar comentario usando JSONP
+        // Función para guardar comentario usando JSONP - VERSIÓN CORREGIDA
         function saveComment(comment) {
             return new Promise((resolve) => {
                 // Primero guardar en localStorage
@@ -1868,18 +1877,22 @@
                 const callbackName = 'handleSaveCommentResponse_' + Date.now();
                 window[callbackName] = function(data) {
                     delete window[callbackName];
-                    document.head.removeChild(script);
+                    if (script.parentNode) {
+                        document.head.removeChild(script);
+                    }
+                    
+                    console.log('🔧 Respuesta de Google Sheets:', data);
                     
                     if (data && data.success) {
                         console.log('✅ Comentario guardado en Google Sheets');
                         resolve(true);
                     } else {
-                        console.log('✅ Comentario guardado en localStorage (fallback)');
+                        console.log('📝 Comentario guardado en localStorage (fallback)');
                         resolve(true);
                     }
                 };
                 
-                // Preparar datos para JSONP
+                // Preparar URL para JSONP - FORMA CORRECTA
                 const params = new URLSearchParams();
                 params.append('action', 'addComment');
                 params.append('author', comment.author);
@@ -1892,25 +1905,31 @@
                 params.append('callback', callbackName);
                 
                 const script = document.createElement('script');
-                script.src = `${SHEET_SCRIPT_URL}?${params.toString()}`;
+                const url = `${SHEET_SCRIPT_URL}?${params.toString()}`;
+                console.log('🌐 Enviando a:', url);
+                script.src = url;
+                
                 script.onerror = function() {
+                    console.log('❌ Error de carga del script JSONP');
                     delete window[callbackName];
-                    document.head.removeChild(script);
-                    console.log('✅ Comentario guardado en localStorage (fallback JSONP)');
+                    if (script.parentNode) {
+                        document.head.removeChild(script);
+                    }
+                    console.log('📝 Comentario guardado en localStorage (fallback JSONP)');
                     resolve(true);
                 };
                 
                 document.head.appendChild(script);
                 
-                // Timeout
+                // Timeout más corto
                 setTimeout(() => {
-                    if (document.head.contains(script)) {
+                    if (script.parentNode) {
                         delete window[callbackName];
                         document.head.removeChild(script);
-                        console.log('✅ Comentario guardado en localStorage (timeout JSONP)');
+                        console.log('⏰ Comentario guardado en localStorage (timeout JSONP)');
                         resolve(true);
                     }
-                }, 5000);
+                }, 3000);
             });
         }
 
