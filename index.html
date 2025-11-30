@@ -984,8 +984,17 @@
         .comment-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .comment-header > div:first-child {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
 
         .comment-author {
@@ -1014,6 +1023,13 @@
         }
 
         .empty-comments {
+            text-align: center;
+            color: var(--secondary-color);
+            padding: 2rem;
+            font-style: italic;
+        }
+
+        .loading-comments {
             text-align: center;
             color: var(--secondary-color);
             padding: 2rem;
@@ -1067,6 +1083,17 @@
             color: var(--secondary-color);
             font-size: 0.85rem;
         }
+
+        /* Estilos para ubicaciones */
+        .location-badge {
+            background: var(--primary-color);
+            color: var(--dark-bg);
+            padding: 0.2rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            margin-left: 0.5rem;
+            font-family: "new-astro", sans-serif;
+        }
         
         /* Responsive */
         @media (max-width: 768px) {
@@ -1119,6 +1146,11 @@
             
             .service-item-actions {
                 align-self: flex-end;
+            }
+
+            .comment-header {
+                flex-direction: column;
+                align-items: flex-start;
             }
         }
         
@@ -1575,15 +1607,15 @@
                             </div>
                         </div>
                         
-                        <button type="submit" class="btn" style="width: 100%;">Publicar comentario</button>
+                        <button type="submit" class="btn" style="width: 100%;" id="submitCommentBtn">Publicar comentario</button>
                     </form>
                 </div>
                 
                 <div class="comments-list" id="commentsList">
-                    <div class="empty-comments">
-                        🌟 Sé el primero en dejar un comentario
+                    <div class="loading-comments">
+                        📡 Cargando comentarios...
                     </div>
-                    <!-- Los comentarios se agregarán aquí dinámicamente -->
+                    <!-- Los comentarios se cargarán aquí dinámicamente -->
                 </div>
             </div>
         </section>
@@ -1621,7 +1653,14 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // Datos de servicios
+        // =============================================
+        // CONFIGURACIÓN GOOGLE SHEETS - ACTUALIZADO CON TUS DATOS
+        // =============================================
+        const SHEET_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz0FfyZyxVbg8kFmJbprhNwlTYDNFVHpSj8CMpWL0yVRQ2HvOui_h4QoIhIW0wOaz8/exec';
+
+        // =============================================
+        // DATOS DE SERVICIOS
+        // =============================================
         const servicesData = {
             basicas: [
                 { id: 'general', name: 'Lectura General', price: 135, description: 'Una visión completa de tu situación actual y energías que te rodean.' },
@@ -1658,6 +1697,120 @@
             ]
         };
 
+        // =============================================
+        // SISTEMA DE COMENTARIOS GLOBAL CON GOOGLE SHEETS
+        // =============================================
+        let comments = [];
+
+        // Función para cargar comentarios desde Google Sheets
+        async function loadComments() {
+            try {
+                const commentsList = document.getElementById('commentsList');
+                commentsList.innerHTML = '<div class="loading-comments">📡 Cargando comentarios...</div>';
+                
+                const response = await fetch(`${SHEET_SCRIPT_URL}?action=getComments`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    comments = data.comments || [];
+                    displayComments();
+                    showNotification('✅ Comentarios cargados correctamente');
+                } else {
+                    throw new Error('Error en la respuesta del servidor');
+                }
+            } catch (error) {
+                console.error('Error cargando comentarios:', error);
+                commentsList.innerHTML = `
+                    <div class="empty-comments">
+                        ❌ Error cargando comentarios. 
+                        <br><small>Los comentarios se mostrarán localmente</small>
+                    </div>
+                `;
+                
+                // Fallback a localStorage
+                comments = JSON.parse(localStorage.getItem('afrodyta_comments')) || [];
+                setTimeout(() => displayComments(), 1000);
+            }
+        }
+
+        // Función para guardar comentario
+        async function saveComment(comment) {
+            try {
+                const response = await fetch(SHEET_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'addComment',
+                        comment: comment
+                    })
+                });
+                
+                const result = await response.json();
+                return result.success;
+            } catch (error) {
+                console.error('Error guardando comentario:', error);
+                return false;
+            }
+        }
+
+        // Función para mostrar comentarios (MANTIENE LA ESTÉTICA)
+        function displayComments() {
+            const commentsList = document.getElementById('commentsList');
+            
+            if (comments.length === 0) {
+                commentsList.innerHTML = '<div class="empty-comments">🌟 Sé el primero en dejar un comentario</div>';
+                return;
+            }
+
+            commentsList.innerHTML = comments.map(comment => `
+                <div class="comment-card">
+                    <div class="comment-header">
+                        <div>
+                            <span class="comment-author">${comment.author}</span>
+                            ${comment.isAnonymous ? '<span class="anonymous-badge">Anónimo</span>' : ''}
+                            ${comment.location && comment.location !== 'Ubicación no disponible' ? 
+                              `<span class="location-badge">📍 ${comment.location}</span>` : ''}
+                        </div>
+                        <div class="comment-date">${comment.date}</div>
+                    </div>
+                    <div class="comment-text">${comment.text}</div>
+                </div>
+            `).join('');
+        }
+
+        // Función para obtener ubicación aproximada
+        function getLocation() {
+            return new Promise((resolve) => {
+                // Opción 1: Usar geolocalización del navegador
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        async (position) => {
+                            try {
+                                const { latitude, longitude } = position.coords;
+                                const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=es`);
+                                const data = await response.json();
+                                resolve(`${data.city}, ${data.countryName}`);
+                            } catch (error) {
+                                resolve('Ubicación no disponible');
+                            }
+                        },
+                        () => {
+                            resolve('Ubicación no disponible');
+                        },
+                        { timeout: 5000 }
+                    );
+                } else {
+                    resolve('Ubicación no disponible');
+                }
+            });
+        }
+
+        // =============================================
+        // CÓDIGO EXISTENTE (se mantiene TODO igual)
+        // =============================================
+        
         // Carrito de servicios
         let selectedServices = JSON.parse(localStorage.getItem('afrodyta_cart')) || [];
 
@@ -1942,41 +2095,6 @@
             }, 3000);
         }
 
-        // Sistema de comentarios
-        let comments = JSON.parse(localStorage.getItem('afrodyta_comments')) || [];
-
-        function saveComment(comment) {
-            if (!comment.isAnonymous && comment.author !== 'Anónimo') {
-                comment.author = comment.author.split(' ')[0];
-            }
-            
-            comments.unshift(comment);
-            localStorage.setItem('afrodyta_comments', JSON.stringify(comments));
-            displayComments();
-        }
-
-        function displayComments() {
-            const commentsList = document.getElementById('commentsList');
-            
-            if (comments.length === 0) {
-                commentsList.innerHTML = '<div class="empty-comments">🌟 Sé el primero en dejar un comentario</div>';
-                return;
-            }
-
-            commentsList.innerHTML = comments.map(comment => `
-                <div class="comment-card">
-                    <div class="comment-header">
-                        <div>
-                            <span class="comment-author">${comment.author}</span>
-                            ${comment.isAnonymous ? '<span class="anonymous-badge">Anónimo</span>' : ''}
-                        </div>
-                        <div class="comment-date">${comment.date}</div>
-                    </div>
-                    <div class="comment-text">${comment.text}</div>
-                </div>
-            `).join('');
-        }
-
         // Validación de cumpleaños
         function isValidBirthdayForPromotion(birthday) {
             if (!birthday) return false;
@@ -1998,8 +2116,8 @@
             // Generar servicios
             updateServicesDisplay();
             
-            // Mostrar comentarios existentes
-            displayComments();
+            // Cargar comentarios globales
+            loadComments();
             
             // Actualizar carrito
             updateCartDisplay();
@@ -2097,8 +2215,10 @@
                 }
             });
 
-            // Manejo del formulario de comentarios
-            document.getElementById('commentForm').addEventListener('submit', function(e) {
+            // =============================================
+            // MANEJO DEL FORMULARIO DE COMENTARIOS
+            // =============================================
+            document.getElementById('commentForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
                 const name = document.getElementById('commentName').value.trim();
@@ -2111,30 +2231,69 @@
                     return;
                 }
 
-                const firstName = name.split(' ')[0];
+                // Validar teléfono
+                if (!/^\d{10}$/.test(phone.replace(/\D/g, ''))) {
+                    alert('Por favor ingresa un número de teléfono válido (10 dígitos)');
+                    return;
+                }
 
-                const comment = {
-                    author: isAnonymous ? 'Anónimo' : firstName,
-                    text: text,
-                    isAnonymous: isAnonymous,
-                    date: new Date().toLocaleDateString('es-MX', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    })
-                };
+                // Mostrar loading
+                const submitBtn = document.getElementById('submitCommentBtn');
+                const originalText = submitBtn.textContent;
+                submitBtn.textContent = '🌍 Publicando...';
+                submitBtn.disabled = true;
 
-                saveComment(comment);
-                
-                this.reset();
-                document.getElementById('isAnonymous').checked = false;
-                
-                showNotification('¡Gracias por tu comentario! 🌟');
+                try {
+                    // Obtener ubicación
+                    const location = await getLocation();
+                    
+                    const firstName = name.split(' ')[0];
+
+                    const comment = {
+                        author: isAnonymous ? 'Anónimo' : firstName,
+                        text: text,
+                        phone: phone.substring(0, 3) + '*****' + phone.substring(8), // Solo mostrar parcialmente
+                        isAnonymous: isAnonymous,
+                        location: location,
+                        date: new Date().toLocaleDateString('es-MX', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        }),
+                        timestamp: new Date().toISOString()
+                    };
+
+                    // Intentar guardar en Google Sheets
+                    const savedInCloud = await saveComment(comment);
+                    
+                    if (savedInCloud) {
+                        // Recargar comentarios desde el servidor
+                        await loadComments();
+                        this.reset();
+                        document.getElementById('isAnonymous').checked = false;
+                        showNotification('¡Gracias por tu comentario! 🌟 Se ha publicado globalmente.');
+                    } else {
+                        // Fallback a localStorage
+                        comments.unshift(comment);
+                        localStorage.setItem('afrodyta_comments', JSON.stringify(comments));
+                        displayComments();
+                        this.reset();
+                        document.getElementById('isAnonymous').checked = false;
+                        showNotification('¡Gracias por tu comentario! 🌟 (Guardado localmente)');
+                    }
+                    
+                } catch (error) {
+                    console.error('Error:', error);
+                    showNotification('❌ Error al publicar comentario. Intenta nuevamente.');
+                } finally {
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                }
             });
 
-            // CORRECCIÓN DEFINITIVA: Manejo del formulario de citas
+            // Manejo del formulario de citas
             document.getElementById('appointmentForm').addEventListener('submit', function(e) {
                 e.preventDefault();
                 
@@ -2176,7 +2335,7 @@
                     }
                 }
                 
-                // CORRECCIÓN: Remover required de campos ocultos
+                // Remover required de campos ocultos
                 const direccionInput = document.getElementById('direccionCompleta');
                 const codigoPostalInput = document.getElementById('codigoPostal');
                 
