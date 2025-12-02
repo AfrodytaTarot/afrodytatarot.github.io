@@ -8,7 +8,7 @@
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        * {
+         {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -1792,138 +1792,136 @@
         // =============================================
         let comments = [];
 
-        // Función para cargar comentarios
-        function loadComments() {
-            const commentsList = document.getElementById('commentsList');
-            commentsList.innerHTML = '<div class="loading-comments">📡 Cargando comentarios...</div>';
-            
-            // Cargar desde localStorage primero (instantáneo)
-            loadCommentsFromLocalStorage();
-            
-            // Intentar cargar desde Google Sheets
-            loadCommentsFromGoogleSheets();
-        }
+        // =============================
+// Cargar comentarios
+// =============================
+function loadComments() {
+  const commentsList = document.getElementById('commentsList');
+  commentsList.innerHTML = '<div class="loading-comments">📡 Cargando comentarios...</div>';
 
-        // Función para cargar comentarios desde Google Sheets
-        function loadCommentsFromGoogleSheets() {
-            const params = new URLSearchParams();
-            params.append('action', 'getComments');
-            params.append('timestamp', Date.now());
-            
-            fetch(`${SHEET_SCRIPT_URL}?${params.toString()}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data && data.success && data.comments) {
-                        comments = data.comments;
-                        displayComments();
-                        localStorage.setItem('afrodyta_comments', JSON.stringify(comments));
-                        console.log('✅ Comentarios cargados desde Google Sheets:', data.comments.length, 'comentarios');
-                    } else if (data && data.error) {
-                        console.log('❌ Error del servidor:', data.error);
-                    }
-                })
-                .catch(error => {
-                    console.log('⚠️ No se pudieron cargar comentarios desde Google Sheets, usando localStorage');
-                    console.error('Error:', error);
-                });
-        }
+  // Cargar desde localStorage primero
+  loadCommentsFromLocalStorage();
 
-        // Cargar comentarios desde localStorage
-        function loadCommentsFromLocalStorage() {
-            try {
-                const localComments = JSON.parse(localStorage.getItem('afrodyta_comments')) || [];
-                if (localComments.length > 0) {
-                    comments = localComments;
-                    displayComments();
-                }
-            } catch (error) {
-                console.error('Error cargando comentarios locales:', error);
-            }
-        }
+  // Intentar cargar desde Google Sheets vía JSONP
+  loadCommentsFromGoogleSheets();
+}
 
-        // Función para guardar comentario - VERSIÓN MEJORADA
-        function saveComment(comment) {
-            return new Promise((resolve) => {
-                // Primero guardar en localStorage
-                const localSuccess = saveCommentToLocalStorage(comment);
-                
-                if (!localSuccess) {
-                    resolve(false);
-                    return;
-                }
-                
-                // Intentar guardar en Google Sheets
-                const params = new URLSearchParams();
-                params.append('action', 'addComment');
-                params.append('author', comment.author);
-                params.append('text', comment.text);
-                params.append('phone', comment.phone);
-                params.append('isAnonymous', comment.isAnonymous ? 'true' : 'false');
-                params.append('location', comment.location);
-                params.append('date', comment.date);
-                params.append('timestamp', comment.timestamp);
-                
-                fetch(SHEET_SCRIPT_URL, {
-                    method: 'POST',
-                    body: params
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data && data.success) {
-                        console.log('✅ Comentario guardado en Google Sheets');
-                        // Recargar comentarios desde el servidor para tener los más actualizados
-                        loadCommentsFromGoogleSheets();
-                        resolve(true);
-                    } else {
-                        console.log('📝 Comentario guardado en localStorage (fallback servidor)');
-                        resolve(true);
-                    }
-                })
-                .catch(error => {
-                    console.log('📝 Comentario guardado en localStorage (error de conexión)');
-                    console.error('Error:', error);
-                    resolve(true);
-                });
-            });
-        }
+// Cargar comentarios desde Google Sheets (JSONP)
+function loadCommentsFromGoogleSheets() {
+  const script = document.createElement("script");
+  script.src = SHEET_SCRIPT_URL + "?action=getComments&callback=handleComments&timestamp=" + Date.now();
+  document.body.appendChild(script);
+}
 
-        // Guardar comentario en localStorage
-        function saveCommentToLocalStorage(comment) {
-            try {
-                comments.unshift(comment);
-                localStorage.setItem('afrodyta_comments', JSON.stringify(comments));
-                displayComments();
-                return true;
-            } catch (error) {
-                console.error('Error guardando en localStorage:', error);
-                return false;
-            }
-        }
+// Callback que recibe los comentarios desde Apps Script
+function handleComments(data) {
+  if (data && data.success && data.comments) {
+    comments = data.comments;
+    displayComments();
+    localStorage.setItem('afrodyta_comments', JSON.stringify(comments));
+    console.log('✅ Comentarios cargados desde Google Sheets:', data.comments.length, 'comentarios');
+  } else if (data && data.error) {
+    console.log('❌ Error del servidor:', data.error);
+  }
+}
 
-        // Función para mostrar comentarios
-        function displayComments() {
-            const commentsList = document.getElementById('commentsList');
-            
-            if (comments.length === 0) {
-                commentsList.innerHTML = '<div class="empty-comments">🌟 Sé el primero en dejar un comentario</div>';
-                return;
-            }
+// Cargar comentarios desde localStorage
+function loadCommentsFromLocalStorage() {
+  try {
+    const localComments = JSON.parse(localStorage.getItem('afrodyta_comments')) || [];
+    if (localComments.length > 0) {
+      comments = localComments;
+      displayComments();
+    }
+  } catch (error) {
+    console.error('Error cargando comentarios locales:', error);
+  }
+}
 
-            commentsList.innerHTML = comments.map(comment => `
-                <div class="comment-card">
-                    <div class="comment-header">
-                        <div>
-                            <span class="comment-author">${comment.author}</span>
-                            ${comment.isAnonymous ? '<span class="anonymous-badge">Anónimo</span>' : ''}
-                            ${comment.location && comment.location !== 'Ubicación no disponible' ? 
-                              `<span class="location-badge">📍 ${comment.location}</span>` : ''}
-                        </div>
-                        <div class="comment-date">${comment.date}</div>
-                    </div>
-                    <div class="comment-text">${comment.text}</div>
-                </div>
-            `).join('');
-        }
+// =============================
+// Guardar comentario
+// =============================
+function saveComment(comment) {
+  return new Promise((resolve) => {
+    // Guardar en localStorage primero
+    const localSuccess = saveCommentToLocalStorage(comment);
+    if (!localSuccess) {
+      resolve(false);
+      return;
+    }
+
+    // Guardar en Google Sheets vía JSONP
+    const script = document.createElement("script");
+    script.src = SHEET_SCRIPT_URL + "?action=addComment"
+      + "&author=" + encodeURIComponent(comment.author)
+      + "&text=" + encodeURIComponent(comment.text)
+      + "&phone=" + encodeURIComponent(comment.phone)
+      + "&isAnonymous=" + encodeURIComponent(comment.isAnonymous)
+      + "&location=" + encodeURIComponent(comment.location)
+      + "&date=" + encodeURIComponent(comment.date)
+      + "&timestamp=" + encodeURIComponent(comment.timestamp)
+      + "&callback=handleAddComment";
+    document.body.appendChild(script);
+
+    resolve(true);
+  });
+}
+
+// Callback al guardar comentario
+function handleAddComment(data) {
+  if (data && data.success) {
+    console.log('✅ Comentario guardado en Google Sheets');
+    loadCommentsFromGoogleSheets(); // recargar lista
+  } else {
+    console.log('📝 Comentario guardado en localStorage (fallback servidor)');
+  }
+}
+
+// Guardar comentario en localStorage
+function saveCommentToLocalStorage(comment) {
+  try {
+    comments.unshift(comment);
+    localStorage.setItem('afrodyta_comments', JSON.stringify(comments));
+    displayComments();
+    return true;
+  } catch (error) {
+    console.error('Error guardando en localStorage:', error);
+    return false;
+  }
+}
+
+// =============================
+// Mostrar comentarios
+// =============================
+function displayComments() {
+  const commentsList = document.getElementById('commentsList');
+
+  if (comments.length === 0) {
+    commentsList.innerHTML = '<div class="empty-comments">🌟 Sé el primero en dejar un comentario</div>';
+    return;
+  }
+
+  commentsList.innerHTML = comments.map(comment => `
+    <div class="comment-card">
+      <div class="comment-header">
+        <div>
+          <span class="comment-author">${comment.author}</span>
+          ${comment.isAnonymous ? '<span class="anonymous-badge">Anónimo</span>' : ''}
+          ${comment.location && comment.location !== 'Ubicación no disponible' ? 
+            `<span class="location-badge">📍 ${comment.location}</span>` : ''}
+        </div>
+        <div class="comment-date">${comment.date}</div>
+      </div>
+      <div class="comment-text">${comment.text}</div>
+    </div>
+  `).join('');
+}
+
+// =============================
+// Inicializar al cargar la página
+// =============================
+document.addEventListener("DOMContentLoaded", loadComments);
+
 
         // =============================================
         // SISTEMA DE CONTROL DE LECTURA DE CUMPLEAÑOS
@@ -2755,4 +2753,3 @@
     </script>
 </body>
 </html>
-
